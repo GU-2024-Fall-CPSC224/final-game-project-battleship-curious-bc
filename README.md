@@ -5,8 +5,8 @@
 
 ### Team Information:
 
-- Team Name:  
-- Students on team:
-- Semester: Spring 2024
+- Team Name:  Team B.C. (Battleship Curious)
+- Students on team: Chris, Steph, Anh, NAthan
+- Semester: Spring 2025
 
 
