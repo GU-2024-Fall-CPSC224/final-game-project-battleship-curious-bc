@@ -1,4 +1,4 @@
-# CPSC 224 Final Project: [Your project name here]
+# CPSC 224 Final Project: Animal Crossing: Last Island Standing
 
 ### Project Description:
 
