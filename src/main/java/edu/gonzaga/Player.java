@@ -9,7 +9,7 @@ public class Player {
     //Player using this keyword for ease of use
     public Player(String name) {
         this.name = name;
-        this.score = score;
+        this.score = 0;
     }
 
     public void setName(String name) {
