@@ -38,42 +38,32 @@ public class Board {
         return fieldStatic[x][y];
     }
 
-
     public boolean canPlaceShip(Ship theShip){
-        Iterator<Coordinate> iterate = theShip.getPoints().iterator();
-        while (iterate.hasNext()){
-            Coordinate coord = iterate.next();
+    for (Coordinate coord : theShip.getCoordinates()) {
+        int x = coord.getCol();
+        int y = coord.getRow();
+        if (getFieldStatus(x, y) != 0) { // Check if the field is not empty
+            return false;
+        }
+    }
+    return true;
+}
+
+public void placeShip(Ship theShip) {
+    if (canPlaceShip(theShip)) {
+        for (Coordinate coord : theShip.getCoordinates()) {
             int x = coord.getRow();
             int y = coord.getCol();
-            if (x < 0 || x >= boardX || y < 0 || y >= boardY) {
-                return false; // Out of bounds
-            }
-            if (fieldStatic[x][y] != 0) {
-                return false; // Already occupied
-            }
+            fieldStatic[x][y] = 2; // Mark the field as occupied by a ship
         }
-            return true;
-        }
-
-
-    public void placeShip(Ship theShip){
-        Iterator<Coordinate> iterate = theShip.getPoints().iterator();
-        while (iterate.hasNext()){
-            Coordinate coord = iterate.next();
-            int x = coord.getRow();
-            int y = coord.getCol();
-            if (fieldStatic[x][y] != 0) {
-                throw new IllegalStateException("Cannot place ship here, field already occupied.");
-            } else {
-                fieldStatic[x][y] = 2; // Mark the ship's position on the board
-            }
-            }
-            fleet.add(theShip); // Add the ship to the fleet
-        }
-
+        fleet.add(theShip); // Add the ship to the fleet
+    } else {
+        throw new IllegalStateException("Cannot place ship at given coordinates.");
+    }
+}
 
     public void removeShip(Ship theShip){
-        Iterator<Coordinate> iterate = theShip.getPoints().iterator();
+        Iterator<Coordinate> iterate = theShip.getCoordinates().iterator();
         while (iterate.hasNext()){
             Coordinate coord = iterate.next();
             int x = coord.getRow();
@@ -144,7 +134,7 @@ public class Board {
         for (int i = 0; i < fleet.size(); i++) {
             Ship ship = fleet.get(i);
             if (ship.hasCoordinates(theCoord)) {
-                return ship.getPoints().size(); // Return the number of points of the ship that was sunk
+                return ship.getCoordinates().size(); // Return the number of points of the ship that was sunk
             }
         }
         return 0; // No ship found at the coordinate

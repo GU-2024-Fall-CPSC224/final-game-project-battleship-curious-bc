@@ -1,6 +1,6 @@
 package edu.gonzaga.BattleShipGame;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Ship {
     private String shipName;
@@ -18,7 +18,7 @@ public class Ship {
     }
 
     // Returns the list of coordinates occupied by the ship
-    public List<Coordinate> getPoints() {
+    public List<Coordinate> getCoordinates() {
         return new ArrayList<>(coords); // Return copy to prevent external modification
     }
 
