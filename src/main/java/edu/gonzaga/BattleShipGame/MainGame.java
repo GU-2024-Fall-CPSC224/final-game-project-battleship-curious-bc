@@ -10,7 +10,7 @@
  * 
  * Copyright: 2023
  */
-package edu.gonzaga;
+package edu.gonzaga.BattleShipGame;
 
 
 /** Main program class for launching your team's program. */

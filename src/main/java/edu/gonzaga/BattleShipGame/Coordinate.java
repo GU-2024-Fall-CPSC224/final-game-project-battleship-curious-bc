@@ -1,4 +1,4 @@
-package edu.gonzaga;
+package edu.gonzaga.BattleShipGame;
 
 /**
  * Represents a coordinate on the 10x10 game board.

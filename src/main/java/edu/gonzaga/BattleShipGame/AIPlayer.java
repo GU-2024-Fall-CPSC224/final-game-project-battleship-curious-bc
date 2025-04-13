@@ -1,4 +1,4 @@
-package edu.gonzaga;
+package edu.gonzaga.BattleShipGame;
 
 public class AIPlayer extends Player {
 
