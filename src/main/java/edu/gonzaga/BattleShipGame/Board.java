@@ -143,4 +143,32 @@ public void placeShip(Ship theShip) {
     public boolean isGameOver(){
         return fleet.isEmpty(); // Return true if all ships have been sunk, false otherwise
     }
+
+    public void displayBoard(boolean revealShips) {
+        System.out.print("   ");
+        for (int col = 0; col < boardX; col++) {
+            System.out.printf("%2d ", col);
+        }
+        System.out.println();
+
+        for (int row = 0; row < boardY; row++) {
+            System.out.printf("%c  ", (char)('A' + row));
+            for (int col = 0; col < boardX; col++) {
+                int val = fieldStatic[row][col];
+                if (val == 0) {
+                    System.out.print(" ~ ");
+                } else if (val == 2 && revealShips) {
+                    System.out.print(" S ");
+                } else if (val == 1) {
+                    System.out.print(" O "); // Miss
+                } else if (val == 3) {
+                    System.out.print(" X "); // Hit
+                } else {
+                    System.out.print(" ~ ");
+                }
+            }
+            System.out.println();
+        }
+    }
+
 }
