@@ -1,38 +1,48 @@
-import java.util.List;
+package edu.gonzaga;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class Ship {
-    private String shipName;
-    private List<Coordinate> coords;
+    private String name;
+    private List<Coordinate> coordinates;
+    private List<Coordinate> hitCoordinates;
 
-    // Constructor
-    public Ship(String shipName, List<Coordinate> coords) {
-        this.shipName = shipName;
-        this.coords = new ArrayList<>(coords); // Defensive copy
+    public Ship(String name, List<Coordinate> coordinates) {
+        this.name = name;
+        this.coordinates = coordinates;
+        this.hitCoordinates = new ArrayList<>();
     }
 
-    // Returns the name of the ship
+    // Return the ship's name
     public String getName() {
-        return shipName;
+        return name;
     }
 
-    // Returns the list of coordinates occupied by the ship
-    public List<Coordinate> getPoints() {
-        return new ArrayList<>(coords); // Return copy to prevent external modification
+    // Return all ship coordinates
+    public List<Coordinate> getCoordinates() {
+        return coordinates;
     }
 
-    // Checks if the ship occupies a given coordinate
+    // Check if a coordinate is part of this ship
     public boolean hasCoordinates(Coordinate coord) {
-        return coords.contains(coord);
+        return coordinates.contains(coord);
     }
 
-    // Checks if the ship has been completely hit
-    public boolean noMoreShip() {
-        return coords.isEmpty();
-    }
-
-    // Registers a hit on the ship at the given coordinate
+    // Register a hit on this ship
     public void shipHit(Coordinate coord) {
-        coords.remove(coord); // Removes the coordinate if present
+        if (hasCoordinates(coord) && !hitCoordinates.contains(coord)) {
+            hitCoordinates.add(coord);
+        }
+    }
+
+    // Check if the ship is completely hit (sunk)
+    public boolean isSunk() {
+        return hitCoordinates.size() == coordinates.size();
+    }
+    
+    @Override
+    public String toString() {
+        return name + " at " + coordinates.toString();
     }
 }
