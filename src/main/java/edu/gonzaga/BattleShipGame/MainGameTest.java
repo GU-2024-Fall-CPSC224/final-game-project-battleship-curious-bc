@@ -58,41 +58,56 @@ public class MainGameTest {
         assert new Coordinate("J9").getRow() == 9 : "Row should be 9 for J9";
         assert new Coordinate("J9").getCol() == 9 : "Column should be 9 for J9";
 
-        System.out.println("");
-        System.out.println("Test Fleet: ");
-        System.out.println("Creating a fleet of 1 ship.");
+        System.out.println("\n" + "Test Fleet: ");
+        System.out.println("Creating a fleet of 3 ships.");
         System.out.println("Creating a ship with coordinates A0, adding to fleet.");
 
         // Create a fleet to hold ships
-                List<Ship> testFleet = new ArrayList<>();
+            List<Ship> testFleet = new ArrayList<>();
 
         // Create a list of coordinates for the ship
-                List<Coordinate> shipCoordinates = new ArrayList<>();
-
-        // Create the ship with the correct constructor
-                Ship testShip = new Ship("Test Ship 1", shipCoordinates);
+            List<Coordinate> shipCoordinates = new ArrayList<>();
 
         // Add coordinates to the ship
-                shipCoordinates.add(new Coordinate("A0"));
+            shipCoordinates.add(new Coordinate("A0"));
+            shipCoordinates.add(new Coordinate("E5"));
+            shipCoordinates.add(new Coordinate("J9"));
+
+        // Create test ships with the correct constructor
+        Ship testShip = new Ship("Test Ship 1", shipCoordinates);
+        Ship testShip2 = new Ship("Test Ship 2", shipCoordinates);
+        Ship testShip3 = new Ship("Test Ship 3", shipCoordinates);
 
         // Check if the ship can be placed on the board
                if (theBoard.canPlaceShip(testShip)) {
                 theBoard.placeShip(testShip); // Place the ship on the board
+                // Print the ship's coordinates
+                System.out.println("Ship coordinates: " + testShip.getCoordinates());
                 System.out.println("Ship placed successfully at coordinates: " + shipCoordinates);
                 } else {
                 System.out.println("Ship cannot be placed on the board.");
             }
-    
+        // Check if the ship can be placed on the board
+                if (theBoard.canPlaceShip(testShip2)) {
+                    theBoard.placeShip(testShip2); // Place the ship on the board
+                    // Print the ship's coordinates
+                    System.out.println("Ship coordinates: " + testShip2.getCoordinates());
+                    System.out.println("Ship placed successfully at coordinates: " + shipCoordinates);
+                } else {
+                    System.out.println("Ship cannot be placed on the board.");
+                }   
+
         // Add the ship to the fleet
-                testFleet.add(testShip); 
+                testFleet.add(testShip);
+                testFleet.add(testShip2);
+                testFleet.add(testShip3); 
 
         // Print ship details
         //        System.out.println("Ship created: " + testShip.getName() + " with coordinates: " + shipCoordinates);
 
 
         // Check the board status after placing the ship
-                System.out.println("");
-                System.out.println("Board status after placing the ship: ");
+                System.out.println("\n" + "Board status after placing the ship: ");
                 for (int y = 0; y < theBoard.getBoardY(); y++){
                     for (int x = 0; x < theBoard.getBoardX(); x++){
                         int tmp = theBoard.getFieldStatus(x, y);
@@ -108,10 +123,19 @@ public class MainGameTest {
                 }
 
 
+        // Check if a ship can placed on grid spot with existing ships
+                System.out.println("Checking if ship can be placed on the board with existing ships.");
+                if (theBoard.canPlaceShip(testShip)) {
+                    System.out.println("testShip can be placed on the board.");
+                } else {
+                    System.out.println("testShip cannot be placed on the board.");
+                } 
+
         // Read and print details of ships in the fleet
-        System.out.println("Fleet details:");
+        
+        System.out.println("\n" + "Fleet details:");
         for (Ship ship : testFleet) {
-            System.out.println("Ship name: " + ship.getName());
+            System.out.println("Ship name: " + ship.getName() + ", Coordinates: " + ship.getCoordinates());
         }
     }
     
