@@ -12,49 +12,48 @@
  */
 package edu.gonzaga.BattleShipGame;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Scanner;
 
-
-/** Main program class for launching your team's program. */
 public class MainGameTest {
     public static void main(String[] args) {
-        System.out.println("Hello Team Game\n");
+        Scanner scanner = new Scanner(System.in);
+        boolean exit = false;
 
-        Board theBoard = new Board();
-        
-        Player player = new Player("Test Player");
+        while (!exit) {
+            System.out.println("\n=== Welcome to Battleship ===");
+            System.out.println("1. Start Game");
+            System.out.println("2. View Instructions");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
 
-        System.out.println("Player created: " + player.getName());
-        System.out.println("Board created: " + theBoard.getBoardX() + " x " + theBoard.getBoardY());
-    
-        System.out.println("\nBoard Legend:");
-        System.out.println("~ = empty, S = ship, X = hit, O = miss\n");
-    
-        // Print the board status
-        theBoard.displayBoard(false);
-        
-        // Create a fleet to hold ships
-        List<Ship> testFleet = new ArrayList<>();
+            String input = scanner.nextLine().trim();
 
-        // Create a ship with coordinates A0, E5, J9
-        List<Coordinate> shipCoordinates = new ArrayList<>();
-        shipCoordinates.add(new Coordinate("A0"));
-        shipCoordinates.add(new Coordinate("E5"));
-        shipCoordinates.add(new Coordinate("J9"));
-
-        Ship testShip = new Ship("Test Ship", shipCoordinates);
-
-        
-        if (theBoard.canPlaceShip(testShip)) {
-            theBoard.placeShip(testShip);
-            testFleet.add(testShip);
-            System.out.println("\nTest ship placed successfully at: " + shipCoordinates);
-        } else {
-            System.out.println("\nShip cannot be placed due to conflict.");
+            switch (input) {
+                case "1":
+                    GameLoop.main(args);  // Start the game!
+                    break;
+                case "2":
+                    printInstructions();
+                    break;
+                case "3":
+                    exit = true;
+                    System.out.println("Thanks for playing Battleship!");
+                    break;
+                default:
+                    System.out.println("Invalid input. Please try again.");
+            }
         }
 
-        System.out.println("\nBoard after placing ship (revealShips = true):");
-        theBoard.displayBoard(true);
+        scanner.close();
+    }
+
+    private static void printInstructions() {
+        System.out.println("\n=== How to Play Battleship ===");
+        System.out.println("- Choose between 1-player (vs AI) or 2-player mode.");
+        System.out.println("- Players place ships on their own 10x10 board.");
+        System.out.println("- On each turn, choose a coordinate to fire at (e.g., A5).");
+        System.out.println("- The goal is to sink all enemy ships.");
+        System.out.println("- Smart AI mode targets around hits to sink ships faster.");
+        System.out.println("- First to eliminate all opponent ships wins!\n");
     }
 }

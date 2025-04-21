@@ -33,7 +33,16 @@ public class Board {
         }
     }
     
+    public boolean attack(Coordinate coord) {
+        if (!canPlaceShot(coord)) return false;
+        int result = placeShot(coord);
+        return result == 3; // true if hit
+    }
 
+    public int getFleetSize() {
+        return fleet.size();
+    }
+    
     public int getFieldStatus(int x, int y){
         return fieldStatic[x][y];
     }

@@ -20,8 +20,8 @@ public class Player {
         return name;
     }
 
-    public int getScore(int score) {
-        return score;
+    public int getScore() {
+        return this.score;
     }
 
     public void setScore(int score){
