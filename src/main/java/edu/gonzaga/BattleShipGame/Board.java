@@ -104,18 +104,21 @@ public void placeShip(Ship theShip) {
         int x = coord.getRow();
         int y = coord.getCol();
         int field = fieldStatic[x][y];
+        
         if (field == 1 || field == 3){
         throw new IllegalStateException("Field already been shot at/hit.");
         } else if (field == 0) {
             fieldStatic[x][y] = 1;
             return field; // Missed shot
         } else {
-            fieldStatic[x][y] = 3; // Shot Hit
-            for (Ship ship : fleet) {
-                if (ship.hasCoordinates(coord)) {
-                    ship.shipHit(coord); // Register the hit on the ship
-                    if (ship.noMoreShip()) {
-                        removeShip(ship); // Remove the ship if it has been sunk
+            fieldStatic[x][y] = 3; // Mark as Shot Hit
+            Iterator<Ship> iterator = fleet.iterator();
+        while (iterator.hasNext()) {
+            Ship ship = iterator.next();
+            if (ship.hasCoordinates(coord)) {
+                ship.shipHit(coord); // Register the hit on the ship
+                if (ship.noMoreShip()) {
+                    iterator.remove(); // Safely remove the ship from the fleet
                     }
                 }
             }
