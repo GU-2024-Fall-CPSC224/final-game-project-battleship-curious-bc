@@ -5,10 +5,10 @@ import java.util.Iterator;
 
 
 public class Board {
-    private static int boardX = 10;
-    private static int boardY = 10; 
+    private int boardX = 10;
+    private int boardY = 10; 
 
-    private static int[][] fieldStatic;
+    private int[][] fieldStatic;
     ArrayList<Ship> fleet = new ArrayList<>();
 
     //Default constructor
@@ -44,26 +44,29 @@ public class Board {
     }
     
     public int getFieldStatus(int x, int y){
-        return fieldStatic[x][y];
+        return this.fieldStatic[x][y];
     }
 
-    public boolean canPlaceShip(Ship theShip){
-    for (Coordinate coord : theShip.getCoordinates()) {
-        int x = coord.getCol();
-        int y = coord.getRow();
-        if (getFieldStatus(x, y) != 0) { // Check if the field is not empty
-            return false;
+    public boolean canPlaceShip(Ship theShip) {
+        for (Coordinate coord : theShip.getCoordinates()) {
+            int row = coord.getRow();
+            int col = coord.getCol();
+            if (row < 0 || row >= boardX || col < 0 || col >= boardY) {
+                return false; // Out of bounds
+            }
+            if (getFieldStatus(row, col) != 0) { // 0 = empty
+                return false; // Collision with another ship
+            }
         }
-    }
-    return true;
-}
+        return true;
+    }    
 
 public void placeShip(Ship theShip) {
     if (canPlaceShip(theShip)) {
         for (Coordinate coord : theShip.getCoordinates()) {
-            int x = coord.getRow();
-            int y = coord.getCol();
-            fieldStatic[x][y] = 2; // Mark the field as occupied by a ship
+            int row = coord.getRow();
+            int col = coord.getCol();
+            fieldStatic[row][col] = 2; // Mark the field as occupied by a ship
         }
         fleet.add(theShip); // Add the ship to the fleet
     } else {
@@ -122,7 +125,7 @@ public void placeShip(Ship theShip) {
 
     // Get board X dimension
     public int getBoardX() {
-        return boardX;
+        return this.boardX;
     }
 
     // Get board Y dimension
@@ -178,6 +181,10 @@ public void placeShip(Ship theShip) {
             }
             System.out.println();
         }
+        System.out.print("   ");
+        for (int col = 0; col < boardX; col++) {
+            System.out.printf("%2d ", col);
+        }
+        System.out.println();
     }
-
 }

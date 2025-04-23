@@ -8,8 +8,36 @@ public class GameLoop {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        boolean exit = false;
 
-        System.out.println("\n=== Welcome to Classic Battleship ===");
+        while (!exit) {
+            System.out.println("\n=== Welcome to Animal Crossing: Last Island Standing ===");
+            System.out.println("1. Start Game");
+            System.out.println("2. Instructions");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    startGame(scanner);
+                    break;
+                case "2":
+                    printInstructions();
+                    break;
+                case "3":
+                    System.out.println("Thanks for playing!");
+                    exit = true;
+                    break;
+                default:
+                    System.out.println("Invalid input. Please choose 1, 2, or 3.");
+            }
+        }
+
+        scanner.close();
+    }
+
+    private static void startGame(Scanner scanner) {
         System.out.print("Enter number of players (1 or 2): ");
         int mode = getIntInput(scanner, "", 1, 2);
 
@@ -18,7 +46,6 @@ public class GameLoop {
         Board board1 = new Board(BOARD_SIZE, BOARD_SIZE);
         Board board2 = new Board(BOARD_SIZE, BOARD_SIZE);
 
-        // Setup second player (human or AI)
         boolean isAI = false;
         boolean smartAI = false;
 
@@ -48,14 +75,13 @@ public class GameLoop {
         boolean gameOver = false;
         Player currentPlayer = player1;
         Player opponent = player2;
-        Board currentBoard = board1;
         Board opponentBoard = board2;
 
         while (!gameOver) {
             System.out.println("\n" + currentPlayer.getName() + "'s turn to attack!");
 
             if (!isAI || currentPlayer == player1) {
-                printHiddenBoard(opponentBoard);
+                opponentBoard.displayBoard(false); // Updated displayBoard handles coordinates
             }
 
             Coordinate target;
@@ -106,60 +132,56 @@ public class GameLoop {
             if (currentPlayer == player1) {
                 currentPlayer = player2;
                 opponent = player1;
-                currentBoard = board2;
                 opponentBoard = board1;
             } else {
                 currentPlayer = player1;
                 opponent = player2;
-                currentBoard = board1;
                 opponentBoard = board2;
             }
         }
-
-        scanner.close();
     }
 
     // ========== Supporting Methods ==========
 
     private static void placeShips(Scanner scanner, Board board, int numShips) {
         for (int i = 1; i <= numShips; i++) {
-        while (true) {
-            System.out.println("\nPlacing Ship #" + i);
+            while (true) {
+                System.out.println("\nPlacing Ship #" + i);
 
-            int length = getIntInput(scanner, "Enter ship length (2-5): ", 2, 5);
-            Coordinate start = getCoordinateInput(scanner, "Enter starting coordinate (e.g., A0): ");
-            System.out.print("Enter direction (H for horizontal, V for vertical): ");
-            String dir = scanner.nextLine().trim().toUpperCase();
-            boolean horizontal = dir.equals("H");
+                int length = getIntInput(scanner, "Enter ship length (2-5): ", 2, 5);
+                Coordinate start = getCoordinateInput(scanner, "Enter starting coordinate (e.g., A0): ");
+                System.out.print("Enter direction (H for horizontal, V for vertical): ");
+                String dir = scanner.nextLine().trim().toUpperCase();
+                boolean horizontal = dir.equals("H");
 
-            List<Coordinate> coords = new ArrayList<>();
-            for (int j = 0; j < length; j++) {
-                int row = start.getRow() + (horizontal ? 0 : j);
-                int col = start.getCol() + (horizontal ? j : 0);
+                List<Coordinate> coords = new ArrayList<>();
+                for (int j = 0; j < length; j++) {
+                    int row = start.getRow() + (horizontal ? 0 : j);
+                    int col = start.getCol() + (horizontal ? j : 0);
 
-                if (row >= BOARD_SIZE || col >= BOARD_SIZE) {
-                    coords = null;
-                    break;
+                    if (row >= BOARD_SIZE || col >= BOARD_SIZE) {
+                        coords = null;
+                        break;
+                    }
+                    coords.add(new Coordinate(row, col));
                 }
-                coords.add(new Coordinate(row, col));
-            }
 
-            if (coords == null || coords.size() != length) {
-                System.out.println("Invalid ship placement. Try again.");
-                continue;
-            }
+                if (coords == null || coords.size() != length) {
+                    System.out.println("Invalid ship placement. Try again.");
+                    continue;
+                }
 
-            Ship ship = new Ship("Ship" + i, coords); // Auto-named ships
-            if (board.canPlaceShip(ship)) {
-                board.placeShip(ship);
-                System.out.println("Ship placed: " + coords);
-                break;
-            } else {
-                System.out.println("Cannot place ship on those coordinates. Try again.");
+                Ship ship = new Ship("Ship" + i, coords);
+                if (board.canPlaceShip(ship)) {
+                    board.placeShip(ship);
+                    System.out.println("Ship placed: " + coords);
+                    break;
+                } else {
+                    System.out.println("Cannot place ship on those coordinates. Try again.");
+                }
             }
         }
     }
-}
 
     private static Coordinate getCoordinateInput(Scanner scanner, String prompt) {
         while (true) {
@@ -186,26 +208,28 @@ public class GameLoop {
         }
     }
 
-    private static void printHiddenBoard(Board board) {
-        System.out.println("\nOpponent Board:");
-        for (int row = 0; row < 10; row++) {
-            System.out.print((char)('A' + row) + " ");
-            for (int col = 0; col < 10; col++) {
-                int val = board.getFieldStatus(row, col);
-                if (val == 1) {
-                    System.out.print(" O ");
-                } else if (val == 3) {
-                    System.out.print(" X ");
-                } else {
-                    System.out.print(" ~ ");
-                }
-            }
-            System.out.println();
-        }
-        System.out.print("   ");
-        for (int col = 0; col < 10; col++) {
-            System.out.printf("%2d ", col);
-        }
-        System.out.println();
+    private static void printInstructions() {
+        System.out.println("\n=== Game Instructions ===");
+        System.out.println("1. Each player places ships on their board.");
+        System.out.println("2. Players take turns firing at enemy coordinates.");
+        System.out.println("3. The first to sink all enemy ships wins.");
+        System.out.println("- Ship sizes range from 2-5.");
+        System.out.println("- Use coordinates like A0, B4 to place and attack.");
+        System.out.println( "Here is the board:\n" +
+            "        0  1  2  3  4  5  6  7  8  9\n" +
+            "    A   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    B   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    C   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    D   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    E   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    F   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    G   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    H   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    I   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "    J   ~  ~  ~  ~  ~  ~  ~  ~  ~  ~\n" +
+            "        0  1  2  3  4  5  6  7  8  9"
+        );
+        
+
     }
 }
