@@ -1,6 +1,7 @@
 package edu.gonzaga.BattleShipGame;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Image;
@@ -15,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 public class GUI {
+    private static boolean isAI = false; //Flag for AI component
 
     public static void displaySplashMenu() {
         // Create the JFrame
@@ -58,7 +60,8 @@ public class GUI {
         playButton.setFocusPainted(false); // Remove focus border
         playButton.addActionListener(e -> {
             frame.dispose(); // Close the splash menu
-            GameLoop.startGame(); // Call the startGame method from GameLoop
+            disPlayerSelection(); // Show the player selection
+            // GameLoop.startGame(); // Call the startGame method from GameLoop
         });
         buttonPanel.add(playButton);
         buttonPanel.add(Box.createVerticalStrut(12)); // Add spacing between buttons
@@ -109,5 +112,150 @@ public class GUI {
 
         // Make the frame visible
         frame.setVisible(true);
+    }
+
+    // Show the player selection frame
+    public static void disPlayerSelection() {
+        // Make the frame
+        JFrame frame = new JFrame("Select Players");
+        frame.setSize(800,600);
+        frame.setLayout(null);
+
+        // Upload PNG image
+        ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/2.PNG"));
+        Image scaledImage = orginalIcon.getImage().getScaledInstance(
+            frame.getWidth(),frame.getHeight(),Image.SCALE_SMOOTH
+        );
+        ImageIcon splashImage = new ImageIcon(scaledImage);
+
+        // Add scale image to JLable
+        JLabel imageLabel = new JLabel(splashImage);
+        imageLabel.setBounds(0,0,frame.getWidth(),frame.getHeight());
+        frame.add(imageLabel);
+
+        // Create transparent button panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS)); // Align buttons vertically
+        buttonPanel.setOpaque(false); // Make the panel transparent
+        buttonPanel.setBounds(frame.getWidth() / 2 - 100, frame.getHeight() / 2 - 35, 205, 200); // Center the panel
+
+        // Create button with same style as the splash menu
+        Font buttonFont = new Font("Arial", Font.BOLD, 18);
+        Dimension buttonSize = new Dimension(180, 50);
+
+        // Single Player button
+        JButton singlePlayerBtn = new JButton("1 Player");
+        singlePlayerBtn.setFont(buttonFont);
+        singlePlayerBtn.setPreferredSize(buttonSize);
+        singlePlayerBtn.setMaximumSize(buttonSize);
+        singlePlayerBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        singlePlayerBtn.setBackground(new Color(255,165,0));
+        singlePlayerBtn.setForeground(Color.RED);
+        singlePlayerBtn.setFocusPainted(false);
+        singlePlayerBtn.addActionListener(e -> {
+            frame.dispose();
+            isAI = true; 
+            showFactionSelection();
+        });
+
+        // Double Player button
+        JButton doublePlayerBtn = new JButton("2 Players");
+        doublePlayerBtn.setFont(buttonFont);
+        doublePlayerBtn.setPreferredSize(buttonSize);
+        doublePlayerBtn.setMaximumSize(buttonSize);
+        doublePlayerBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        doublePlayerBtn.setBackground(new Color(255,165,0));
+        doublePlayerBtn.setForeground(Color.RED);
+        doublePlayerBtn.setFocusPainted(false);
+        doublePlayerBtn.addActionListener(e -> {
+            frame.dispose();
+            isAI = false;
+            showFactionSelection();
+        });
+
+        // Back button
+        JButton backButton = new JButton("Back");
+        backButton.setFont(buttonFont);
+        backButton.setPreferredSize(buttonSize);
+        backButton.setMaximumSize(buttonSize);
+        backButton.setAlignmentX(Component.TOP_ALIGNMENT);
+        backButton.setBackground(new Color(255,165,0));
+        backButton.setForeground(Color.RED);
+        backButton.setFocusPainted(false);
+        backButton.addActionListener(e -> {
+            frame.dispose();
+            displaySplashMenu();
+        });
+
+        // Add button to panel
+        buttonPanel.add(singlePlayerBtn);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(doublePlayerBtn);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(backButton);
+
+        // Add component to frame
+        frame.add(buttonPanel);
+
+        // Ensure the image is behind the buttons
+        frame.getContentPane().setComponentZOrder(imageLabel, frame.getContentPane().getComponentCount() - 1);
+
+        // Make the frame visible
+        frame.setVisible(true);
+    }
+
+    // Show the faction selection frame
+    public static void showFactionSelection() {
+        // Make the frame
+        JFrame frame = new JFrame("Choose Your Island");
+        frame.setSize(800,600);
+        frame.setLayout(null);
+
+        // Upload PNG image
+        ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/3.PNG"));
+        Image scaledImage = orginalIcon.getImage().getScaledInstance(
+            frame.getWidth(),frame.getHeight(),Image.SCALE_SMOOTH
+        );
+        ImageIcon splashImage = new ImageIcon(scaledImage);
+
+        // Add scale image to JLable
+        JLabel imageLabel = new JLabel(splashImage);
+        imageLabel.setBounds(0,0,frame.getWidth(),frame.getHeight());
+        frame.add(imageLabel);
+
+        // Create transparent button panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS)); // Align buttons vertically
+        buttonPanel.setOpaque(false); // Make the panel transparent
+        buttonPanel.setBounds(frame.getWidth() / 2 - 100, frame.getHeight() / 2 - 35, 205, 200); // Center the panel
+
+        // Create button with same style as the splash menu
+        Font buttonFont = new Font("Arial", Font.BOLD, 18);
+        Dimension buttonSize = new Dimension(180, 50);
+
+        // Faction buttons
+        JButton isabelleButton = createFactionButton(
+            "Isabelle of Bell Haven", buttonFont, buttonSize);
+        
+        JButton tomButton = createFactionButton(
+            "Tom Nook of Nook Isle", buttonFont, buttonSize);
+
+        // Ensure the image is behind the buttons
+        frame.getContentPane().setComponentZOrder(imageLabel, frame.getContentPane().getComponentCount() - 1);
+
+        // Make the frame visible
+        frame.setVisible(true);
+    }
+
+    public static JButton createFactionButton(String text, Font font, Dimension size) {
+        JButton button = new JButton(text);
+        button.setFont(font);
+        button.setPreferredSize(size);
+        button.setMaximumSize(size);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setBackground(new Color(255,165,0));
+        button.setForeground(Color.RED);
+        button.setFocusPainted(false);
+        return button;
     }
 }
