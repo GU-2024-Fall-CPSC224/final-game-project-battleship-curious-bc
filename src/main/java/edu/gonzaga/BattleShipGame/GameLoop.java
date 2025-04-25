@@ -1,6 +1,8 @@
 package edu.gonzaga.BattleShipGame;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class GameLoop {
     private static final int BOARD_SIZE = 10;
@@ -8,6 +10,7 @@ public class GameLoop {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
+        GUI.displaySplashMenu(); // Display the splash menu
         boolean exit = false;
 
         while (!exit) {
@@ -20,7 +23,7 @@ public class GameLoop {
 
             switch (choice) {
                 case "1":
-                    startGame(scanner);
+                    startGame();
                     break;
                 case "2":
                     printInstructions();
@@ -37,7 +40,8 @@ public class GameLoop {
         scanner.close();
     }
 
-    private static void startGame(Scanner scanner) {
+    public static void startGame() {
+        Scanner scanner = new Scanner(System.in); // Create a new Scanner instance
         System.out.print("Enter number of players (1 or 2): ");
         int mode = getIntInput(scanner, "", 1, 2);
 
