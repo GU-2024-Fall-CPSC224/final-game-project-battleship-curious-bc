@@ -17,6 +17,7 @@ import javax.swing.JPanel;
 
 public class GUI {
     private static boolean isAI = false; //Flag for AI component
+    private static String playerFaction; // name of faction
 
     public static void displaySplashMenu() {
         // Create the JFrame
@@ -182,6 +183,8 @@ public class GUI {
         backButton.setBackground(new Color(255,165,0));
         backButton.setForeground(Color.RED);
         backButton.setFocusPainted(false);
+        // Set position manually (top left corner)
+        backButton.setBounds(10,10,100,40);
         backButton.addActionListener(e -> {
             frame.dispose();
             displaySplashMenu();
@@ -191,10 +194,9 @@ public class GUI {
         buttonPanel.add(singlePlayerBtn);
         buttonPanel.add(Box.createVerticalStrut(10));
         buttonPanel.add(doublePlayerBtn);
-        buttonPanel.add(Box.createVerticalStrut(10));
-        buttonPanel.add(backButton);
 
         // Add component to frame
+        frame.add(backButton);
         frame.add(buttonPanel);
 
         // Ensure the image is behind the buttons
@@ -236,9 +238,63 @@ public class GUI {
         // Faction buttons
         JButton isabelleButton = createFactionButton(
             "Isabelle of Bell Haven", buttonFont, buttonSize);
-        
+        isabelleButton.addActionListener(e -> {
+            playerFaction = "Isabelle of Bell Haven";
+            frame.dispose();
+        });
+
         JButton tomButton = createFactionButton(
             "Tom Nook of Nook Isle", buttonFont, buttonSize);
+        tomButton.addActionListener(e -> {
+            playerFaction = "Tom Nook of Nook Isle";
+            frame.dispose();
+        });
+        
+
+        JButton neutralButton = createFactionButton(
+            "Neutral Village", buttonFont, buttonSize);
+        
+        neutralButton.addActionListener(e -> {
+            playerFaction = "Neutral Village";
+            frame.dispose();
+        });
+
+        JButton antiButton = createFactionButton(
+            "Anti-Fossil Abolitionist", buttonFont, buttonSize);
+        antiButton.addActionListener(e-> {
+            playerFaction = "Anti-Fossil Abolitionist";
+            frame.dispose();
+        });
+
+        // Back button
+        JButton backButton = new JButton("Back");
+        backButton.setFont(buttonFont);
+        backButton.setPreferredSize(buttonSize);
+        backButton.setMaximumSize(buttonSize);
+        backButton.setAlignmentX(Component.TOP_ALIGNMENT);
+        backButton.setBackground(new Color(255,165,0));
+        backButton.setForeground(Color.RED);
+        backButton.setFocusPainted(false);
+        // Set position manually (top left corner)
+        backButton.setBounds(10,10,100,40);
+        backButton.addActionListener(e -> {
+            frame.dispose();
+            displaySplashMenu();
+        });
+
+
+        // Add component to panel
+        buttonPanel.add(isabelleButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(tomButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(neutralButton);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(antiButton);
+
+        // Add component to frame
+        frame.add(buttonPanel);
+        frame.add(backButton);
 
         // Ensure the image is behind the buttons
         frame.getContentPane().setComponentZOrder(imageLabel, frame.getContentPane().getComponentCount() - 1);
