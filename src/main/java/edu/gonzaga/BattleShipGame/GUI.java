@@ -42,6 +42,9 @@ public class GUI {
     private static JFrame gameFrame;
     private static JPanel gamePanel;
     private static List<Coordinate> selectedShipCoordinates = new ArrayList<>();
+    private static boolean isPlayer1Turn = true; // Tracks if Player 1 is placing ships
+    private static JPanel boardPanel;
+    private static boolean isBattlePhase = false;
 
     // Color constants
     private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
@@ -290,27 +293,27 @@ public class GUI {
 
         JButton tomButton = createFactionButton(
             "Tom Nook of Nook Isle", buttonFont, buttonSize);
-        tomButton.addActionListener(e -> {
-            playerFaction = "Tom Nook of Nook Isle";
-            frame.dispose();
-            selectOpponentFaction();
-        });
+            tomButton.addActionListener(e -> {
+                playerFaction = "Tom Nook of Nook Isle";
+                frame.dispose();
+                selectOpponentFaction();
+            });
 
         JButton neutralButton = createFactionButton(
             "Neutral Village", buttonFont, buttonSize);
-        neutralButton.addActionListener(e -> {
-            playerFaction = "Neutral Village";
-            frame.dispose();
-            selectOpponentFaction();
-        });
+            neutralButton.addActionListener(e -> {
+                playerFaction = "Neutral Village";
+                frame.dispose();
+                selectOpponentFaction();
+            });
 
         JButton antiButton = createFactionButton(
             "Anti-Fossil Abolitionist", buttonFont, buttonSize);
-        antiButton.addActionListener(e-> {
-            playerFaction = "Anti-Fossil Abolitionist";
-            frame.dispose();
-            selectOpponentFaction();
-        });
+            antiButton.addActionListener(e-> {
+                playerFaction = "Anti-Fossil Abolitionist";
+                frame.dispose();
+                selectOpponentFaction();
+            });
 
         // Add buttons to panel
         buttonPanel.add(isabelleButton);
@@ -488,7 +491,7 @@ public class GUI {
         gameFrame.setSize(800,600);
         gameFrame.setLayout(new BorderLayout());
 
-        // Initialize board
+        // Create an empty board
         playerBoard = new Board(10,10);
         oppBoard = new Board(10,10);
 
@@ -510,96 +513,97 @@ public class GUI {
         gamePanel = new JPanel(new BorderLayout());
 
         // Create board panel
-        JPanel boardPanel = new JPanel(new GridLayout(1,2,20,20));
-        boardPanel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+        boardPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        boardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Player board set up
-        JPanel playerBoardPanel = createBoardPanel(true);
+        // Initialize button arrays
+        playerButtons = new JButton[10][10];
+        oppButtons = new JButton[10][10];
+
+        // Create Player board
+        JPanel playerBoardPanel = createBoardPanel(playerBoard, playerButtons, true);
         boardPanel.add(playerBoardPanel);
 
-        // Opponent board set up (hidden during placement)
-        JPanel oppBoardPanel = createBoardPanel(false);
-        oppBoardPanel.setVisible(false);
+        // Create Opponent board (hidden during placement)
+        JPanel oppBoardPanel = createBoardPanel(oppBoard, oppButtons, false);
+        oppBoardPanel.setVisible(false); 
         boardPanel.add(oppBoardPanel);
 
-        // Control panel with buttons
+        // Control panel with Rotate and Confirm
         JPanel controlPanel = new JPanel();
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
-            clearHighlights();
+            clearHighlights(playerButtons);
             if (!selectedShipCoordinates.isEmpty()) {
-                // Try to place the rotated ship
                 Coordinate firstCoord = selectedShipCoordinates.get(0);
-                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+                new PlacementButtonListener(playerBoard, playerButtons, firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
             }
         });
-        
+
         confirmButton = new JButton("Confirm Placement");
         confirmButton.setEnabled(false);
         confirmButton.addActionListener(e -> confirmPlacement());
-        
+
         statusLabel = new JLabel("Place your 2-segment ship");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
+
         controlPanel.add(rotateButton);
         controlPanel.add(confirmButton);
 
-        // Add components to main panel
+        // Add panels to main frame
         gamePanel.add(boardPanel, BorderLayout.CENTER);
         gamePanel.add(controlPanel, BorderLayout.NORTH);
         gamePanel.add(statusLabel, BorderLayout.SOUTH);
 
-        // Add panel to frame
         gameFrame.add(gamePanel);
         gameFrame.revalidate();
         gameFrame.repaint();
-    }
+        }
 
-    private static JPanel createBoardPanel(boolean isPlayerBoard) {
-        JPanel boardPanel = new JPanel(new GridLayout(10,10,1,1));
-        boardPanel.setBorder(BorderFactory.createTitledBorder(
-            isPlayerBoard ? "Your Ship (" + playerFaction +")" : 
-            (isAI ? "Computer ("+ oppFaction + ")" : oppFaction + "'s Waters")));
+        private static JPanel createBoardPanel(Board board, JButton[][] buttons, boolean isPlacementPhase) {
+            JPanel boardPanel = new JPanel(new GridLayout(10,10,1,1));
+            boardPanel.setBorder(BorderFactory.createTitledBorder(
+                (board == playerBoard) ? "Your Ship (" + playerFaction +")" : 
+                (isAI ? "Computer ("+ oppFaction + ")" : oppFaction + "'s Waters")));
 
-        JButton[][] buttons = new JButton[10][10];
-        for (int row = 0; row < 10; row++) {
-            for (int col = 0; col < 10; col++) {
-                JButton button = new JButton();
-                button.setPreferredSize(new Dimension(40, 40));
-                button.setBackground(WATER_COLOR);
-                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-                
-                if (isPlayerBoard) {
-                    button.addActionListener(new PlacementButtonListener(row, col));
+            for (int row = 0; row < 10; row++) {
+                for (int col = 0; col < 10; col++) {
+                    JButton button = new JButton();
+                    button.setPreferredSize(new Dimension(40, 40));
+                    button.setBackground(WATER_COLOR);
+                    button.setOpaque(true); // Make sure background color shows
+                    button.setBorderPainted(true);
+                    button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                    
+                    if (isPlacementPhase) {
+                        button.addActionListener(new PlacementButtonListener(board, buttons, row, col));
+                    }
+                    
+                    boardPanel.add(button);
+                    buttons[row][col] = button;
                 }
-                
-                boardPanel.add(button);
-                buttons[row][col] = button;
             }
-        }
-        
-        if (isPlayerBoard) {
-            playerButtons = buttons;
-        } else {
-            oppButtons = buttons;
-        }
-        return boardPanel;
+            return boardPanel;
     }
 
     private static class PlacementButtonListener implements ActionListener {
         private int row;
         private int col;
+        private Board board;
+        private JButton[][] buttons;
 
-        public PlacementButtonListener(int row, int col) {
-            this.col = col;
+        public PlacementButtonListener(Board board, JButton[][] buttons, int row, int col) {
+            this.board = board;
+            this.buttons = buttons;
             this.row = row;
+            this.col = col;
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            clearHighlights();
+            clearHighlights(buttons);
             
             List<Coordinate> coords = new ArrayList<>();
             boolean valid = true;
@@ -652,12 +656,11 @@ public class GUI {
     }
 
     // Clear placement highlights
-    private static void clearHighlights() {
+    private static void clearHighlights(JButton[][] buttons) {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                Color current = playerButtons[row][col].getBackground();
-                if (current.equals(INVALID_COLOR)) {
-                    playerButtons[row][col].setBackground(WATER_COLOR);
+                if (buttons[row][col].getBackground().equals(INVALID_COLOR)) {
+                    buttons[row][col].setBackground(WATER_COLOR);
                 }
             }
         }
@@ -666,141 +669,150 @@ public class GUI {
     // Confirm ship placement
     private static void confirmPlacement() {
         if (selectedShipCoordinates.size() == shipSize) {
-            Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
-            if (playerBoard.canPlaceShip(ship)) {
-                playerBoard.placeShip(ship);
-                shipsPlaced++;
+            Ship ship = new Ship(
+                (isPlayer1Turn ? playerFaction : oppFaction) + " Ship " + (shipsPlaced + 1),
+                selectedShipCoordinates
+            );
+
+            Board targetBoard = isPlayer1Turn ? playerBoard : oppBoard;
+            JButton[][] targetButtons = isPlayer1Turn ? playerButtons : oppButtons;
                 
-                // Mark all confirmed ship positions as gray
+            if (targetBoard.canPlaceShip(ship)) {
+                targetBoard.placeShip(ship);
+                shipsPlaced++; // Increment ship placed
+    
+                // Mark confirmed ship positions
                 for (Coordinate coord : selectedShipCoordinates) {
-                    playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+                    targetButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
                 }
-                
-                if (shipsPlaced < 3) { // Place 3 ships (sizes 2, 3, 4)
+    
+                if (shipsPlaced < 3) { // Still placing ships (size 2, 3, 4)
                     shipSize++;
                     statusLabel.setText("Place your " + shipSize + "-segment ship");
                     confirmButton.setEnabled(false);
                     selectedShipCoordinates.clear();
-                } else {
-                    // If human opponent, switch to their placement phase
-                    if (!isAI) {
-                        switchToOpponentPlacement();
-                    } else { 
+                } else { // All ships placed
+                    if (isAI || !isPlayer1Turn) {
+                        // AI or Player 2 finished placing ships → Start battle!
                         startBattlePhase();
+                    } else {
+                        // Player 1 finished placing ships → Switch to Player 2
+                        isPlayer1Turn = false;
+                        switchToOpponentPlacement();
                     }
                 }
             }
         }
     }
 
-    private static void switchToOpponentPlacement() {
-        // Save player 1's board and reset for player 2
-        Board tempBoard = playerBoard;
-        playerBoard = oppBoard;
-        oppBoard = tempBoard;
-        
+    private static void switchToOpponentPlacement() { 
         // Reset placement variables
         shipSize = 2;
         shipsPlaced = 0;
         selectedShipCoordinates.clear();
+        statusLabel.setText("Player 2 - Place your 2-segment ship");
+        confirmButton.setEnabled(false);
+        oppButtons = new JButton[10][10]; // reset opponent button array
         
-        // Update UI
+        // UI
         gamePanel.removeAll();
         JPanel boardPanel = new JPanel(new GridLayout(1, 2, 20, 20));
         boardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Player board (now showing player 2's placement)
-        JPanel playerBoardPanel = createBoardPanel(true);
+        JPanel playerBoardPanel = createBoardPanel(oppBoard, oppButtons, true);
         boardPanel.add(playerBoardPanel);
 
         // Hide opponent board (which is now player 1's board)
-        JPanel oppBoardPanel = createBoardPanel(false);
+        JPanel oppBoardPanel = createBoardPanel(playerBoard, playerButtons, false);
         oppBoardPanel.setVisible(false);
         boardPanel.add(oppBoardPanel);
 
-        // Update controls
-        statusLabel.setText("Player 2 - Place your 2-segment ship");
+        // Recreate control panel with same styling as before
+        JPanel controlPanel = new JPanel();
+    
+        // Reapply rotateButton styling
+        rotateButton = new JButton("Rotate Ship");
+        rotateButton.setFont(new Font("Arial", Font.BOLD, 14));
+        rotateButton.setBackground(new Color(255, 165, 0)); // Orange
+        rotateButton.setForeground(Color.RED);
+        rotateButton.setFocusPainted(false);
+        rotateButton.addActionListener(e -> {
+            horizontalPlacement = !horizontalPlacement;
+            clearHighlights(oppButtons);
+            if (!selectedShipCoordinates.isEmpty()) {
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(oppBoard, oppButtons, firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
+        });
+
+        // Reapply confirmButton styling
+        confirmButton = new JButton("Confirm Placement");
+        confirmButton.setFont(new Font("Arial", Font.BOLD, 14));
+        confirmButton.setBackground(new Color(255, 165, 0)); // Orange
+        confirmButton.setForeground(Color.RED);
+        confirmButton.setFocusPainted(false);
         confirmButton.setEnabled(false);
-        
+        confirmButton.addActionListener(e -> confirmPlacement());
+
+        controlPanel.add(rotateButton);
+        controlPanel.add(confirmButton);
+
+        statusLabel = new JLabel("Player 2 - Place your 2-segment ship");
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        gamePanel.add(controlPanel, BorderLayout.NORTH);
         gamePanel.add(boardPanel, BorderLayout.CENTER);
-        gamePanel.add(rotateButton, BorderLayout.NORTH);
-        gamePanel.add(confirmButton, BorderLayout.NORTH);
         gamePanel.add(statusLabel, BorderLayout.SOUTH);
         
         gameFrame.revalidate();
         gameFrame.repaint();
     }
-    
-    public static void startBattlePhase() {
-        gamePanel.removeAll();
 
-        // Create boards panel
-        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 20));
-        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+    public static void startBattlePhase() {
+        boardPanel.removeAll();
         
-        // Player board (show ships)
-        JPanel playerBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
-        playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + playerFaction + ")"));
-        
+        playerButtons = new JButton[10][10];
+        oppButtons = new JButton[10][10];
+
+        JPanel playerBoardPanel = createBoardPanel(playerBoard, playerButtons, false);
+        boardPanel.add(playerBoardPanel);
+
+        JPanel oppBoardPanel = createBoardPanel(oppBoard, oppButtons, false);
+        boardPanel.add(oppBoardPanel);
+
+        // Now oppButtons should be clickable for attacks!
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                JLabel label = new JLabel();
-                label.setOpaque(true);
-                label.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-                label.setPreferredSize(new Dimension(40, 40));
-                
-                int status = playerBoard.getFieldStatus(row, col);
-                if (status == 0) {
-                    label.setBackground(Color.BLUE); // Water
-                } else if (status == 1) {
-                    label.setBackground(Color.CYAN); // Miss
-                } else if (status == 2) {
-                    label.setBackground(Color.GRAY); // Ship (not hit)
-                } else if (status == 3) {
-                    label.setBackground(Color.RED); // Hit
-                }
-                
-                playerBoardPanel.add(label);
+                JButton button = oppButtons[row][col];
+                button.addActionListener(new AttackButtonListener(row, col));
             }
         }
-        // Enemy board (clickable for attacks)
-        JPanel enemyBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
-        enemyBoardPanel.setBorder(BorderFactory.createTitledBorder(
-            isAI ? "Computer (" + oppFaction + ")" : oppFaction + "'s Waters"));
-        
+
+        // // Show your ships on your board
+        // for (Ship ship : playerBoard.getShips()) {
+        //     for (Coordinate coord : ship.getCoordinates()) {
+        //         playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+        //     }
+        // }
+
+        // If you need to show ships on the player's board, use this alternative approach:
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                JButton button = new JButton();
-                button.setPreferredSize(new Dimension(40, 40));
-                button.setBackground(Color.BLUE);
-                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-                
-                int status = oppBoard.getFieldStatus(row, col);
-                if (status == 1) {
-                    button.setBackground(Color.CYAN); // Miss
-                    button.setEnabled(false);
-                } else if (status == 3) {
-                    button.setBackground(Color.RED); // Hit
-                    button.setEnabled(false);
-                } else {
-                    button.addActionListener(new AttackButtonListener(row, col));
+                if (playerBoard.getFieldStatus(row, col) == 2) { // 2 represents a ship
+                    playerButtons[row][col].setBackground(SHIP_COLOR);
                 }
-                
-                enemyBoardPanel.add(button);
-                oppButtons[row][col] = button;
             }
         }
-        
-        boardsPanel.add(playerBoardPanel);
-        boardsPanel.add(enemyBoardPanel);
-        
-        statusLabel = new JLabel("Your turn. Attack the enemy fleet!");
-        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        gamePanel.add(boardsPanel, BorderLayout.CENTER);
-        gamePanel.add(statusLabel, BorderLayout.SOUTH);
-        
+
+
+        isBattlePhase = true;
+        isPlayer1Turn = true; // Player 1 starts first
+
+        confirmButton.setEnabled(false); // No need to confirm during battle
+        statusLabel.setText(playerFaction + ", it's your turn! Attack an enemy square.");
+
         gameFrame.revalidate();
         gameFrame.repaint();
     }
