@@ -41,6 +41,13 @@ public class GUI {
     private static JLabel statusLabel;
     private static JFrame gameFrame;
     private static JPanel gamePanel;
+    private static List<Coordinate> selectedShipCoordinates = new ArrayList<>();
+
+    // Color constants
+    private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
+    private static final Color SHIP_COLOR = new Color(80, 80, 80); // Dark gray for ships
+    private static final Color INVALID_COLOR = new Color(255, 100, 100); // Light red for invalid
+    private static final Color HIGHLIGHT_COLOR = new Color(255, 200, 100); // Yellow for highlights
 
     public static void displaySplashMenu() {
         // Create the JFrame
@@ -520,6 +527,12 @@ public class GUI {
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
+            clearHighlights();
+            if (!selectedShipCoordinates.isEmpty()) {
+                // Try to place the rotated ship
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
         });
         
         confirmButton = new JButton("Confirm Placement");
@@ -555,7 +568,7 @@ public class GUI {
             for (int col = 0; col < 10; col++) {
                 JButton button = new JButton();
                 button.setPreferredSize(new Dimension(40, 40));
-                button.setBackground(Color.BLUE);
+                button.setBackground(WATER_COLOR);
                 button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
                 
                 if (isPlayerBoard) {
@@ -586,7 +599,7 @@ public class GUI {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            clearPlacementHighlights();
+            clearHighlights();
             
             List<Coordinate> coords = new ArrayList<>();
             boolean valid = true;
@@ -599,66 +612,125 @@ public class GUI {
                     valid = false;
                     break;
                 }
-                
                 coords.add(new Coordinate(r, c));
             }
             
             if (valid) {
+                 // Check if clicking on existing ship to remove it
+                boolean isRemoving = true;
                 for (Coordinate coord : coords) {
-                    int r = coord.getRow();
-                    int c = coord.getCol();
-                    playerButtons[r][c].setBackground(Color.ORANGE);
+                    if (playerButtons[coord.getRow()][coord.getCol()].getBackground() != SHIP_COLOR) {
+                        isRemoving = false;
+                        break;
+                    }
                 }
-                confirmButton.setEnabled(true);
+                if (isRemoving) {
+                    // Remove ship
+                    for (Coordinate coord : coords) {
+                        playerButtons[coord.getRow()][coord.getCol()].setBackground(WATER_COLOR);
+                    }
+                    confirmButton.setEnabled(false);
+                } else {
+                    // Place ship
+                    for (Coordinate coord : coords) {
+                        playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+                    }
+                    confirmButton.setEnabled(true);
+                }
+                selectedShipCoordinates = coords;
+                statusLabel.setText("Placement looks good! Confirm when ready.");
             } else {
+                // Show invalid placement
+                for (Coordinate coord : coords) {
+                    if (coord.getRow() < 10 && coord.getCol() < 10) {
+                        playerButtons[coord.getRow()][coord.getCol()].setBackground(INVALID_COLOR);
+                    }
+                }
                 statusLabel.setText("Invalid placement! Try another position.");
             }
         }
     }
+
     // Clear placement highlights
-    private static void clearPlacementHighlights() {
+    private static void clearHighlights() {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 Color current = playerButtons[row][col].getBackground();
-                if (current.equals(Color.ORANGE)){
-                    playerButtons[row][col].setBackground(Color.BLUE);
+                if (current.equals(INVALID_COLOR)) {
+                    playerButtons[row][col].setBackground(WATER_COLOR);
                 }
             }
         }
     }
+
     // Confirm ship placement
     private static void confirmPlacement() {
-        List<Coordinate> shipCoords = new ArrayList<>();
-        for (int row = 0; row < 10; row++) {
-            for (int col = 0; col < 10; col++) {
-                if (playerButtons[row][col].getBackground() == Color.ORANGE) {
-                    shipCoords.add(new Coordinate(row, col));
-                }
-            }
-        }
-        
-        if (shipCoords.size() == shipSize) {
-            Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), shipCoords);
+        if (selectedShipCoordinates.size() == shipSize) {
+            Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
             if (playerBoard.canPlaceShip(ship)) {
                 playerBoard.placeShip(ship);
                 shipsPlaced++;
                 
-                for (Coordinate coord : shipCoords) {
-                    int row = coord.getRow();
-                    int col = coord.getCol();
-                    playerButtons[row][col].setBackground(Color.GRAY);
+                // Mark all confirmed ship positions as gray
+                for (Coordinate coord : selectedShipCoordinates) {
+                    playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
                 }
                 
                 if (shipsPlaced < 3) { // Place 3 ships (sizes 2, 3, 4)
                     shipSize++;
                     statusLabel.setText("Place your " + shipSize + "-segment ship");
                     confirmButton.setEnabled(false);
+                    selectedShipCoordinates.clear();
                 } else {
-                    startBattlePhase();
+                    // If human opponent, switch to their placement phase
+                    if (!isAI) {
+                        switchToOpponentPlacement();
+                    } else { 
+                        startBattlePhase();
+                    }
                 }
             }
         }
     }
+
+    private static void switchToOpponentPlacement() {
+        // Save player 1's board and reset for player 2
+        Board tempBoard = playerBoard;
+        playerBoard = oppBoard;
+        oppBoard = tempBoard;
+        
+        // Reset placement variables
+        shipSize = 2;
+        shipsPlaced = 0;
+        selectedShipCoordinates.clear();
+        
+        // Update UI
+        gamePanel.removeAll();
+        JPanel boardPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        boardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Player board (now showing player 2's placement)
+        JPanel playerBoardPanel = createBoardPanel(true);
+        boardPanel.add(playerBoardPanel);
+
+        // Hide opponent board (which is now player 1's board)
+        JPanel oppBoardPanel = createBoardPanel(false);
+        oppBoardPanel.setVisible(false);
+        boardPanel.add(oppBoardPanel);
+
+        // Update controls
+        statusLabel.setText("Player 2 - Place your 2-segment ship");
+        confirmButton.setEnabled(false);
+        
+        gamePanel.add(boardPanel, BorderLayout.CENTER);
+        gamePanel.add(rotateButton, BorderLayout.NORTH);
+        gamePanel.add(confirmButton, BorderLayout.NORTH);
+        gamePanel.add(statusLabel, BorderLayout.SOUTH);
+        
+        gameFrame.revalidate();
+        gameFrame.repaint();
+    }
+    
     public static void startBattlePhase() {
         gamePanel.removeAll();
 
