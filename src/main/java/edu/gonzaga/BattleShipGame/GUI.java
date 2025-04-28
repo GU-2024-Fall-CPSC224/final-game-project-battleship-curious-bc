@@ -7,10 +7,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Image;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.awt.event.ActionEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -656,11 +656,13 @@ public class GUI {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 Color current = playerButtons[row][col].getBackground();
-                if (current.equals(INVALID_COLOR)) {
+                if (current.equals(INVALID_COLOR) || current.equals(SHIP_COLOR)) {
                     playerButtons[row][col].setBackground(WATER_COLOR);
                 }
             }
         }
+        selectedShipCoordinates.clear(); // Clear the selected coordinates
+        confirmButton.setEnabled(false); // Disable the confirm button
     }
 
     // Confirm ship placement
@@ -684,7 +686,7 @@ public class GUI {
                 } else {
                     // If human opponent, switch to their placement phase
                     if (!isAI) {
-                        switchToOpponentPlacement();
+                        // switchToOpponentPlacement();
                     } else { 
                         startBattlePhase();
                     }
@@ -974,4 +976,4 @@ public class GUI {
             }
         }
     }
-}    
+}
