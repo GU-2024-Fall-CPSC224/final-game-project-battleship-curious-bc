@@ -22,8 +22,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
@@ -114,32 +112,48 @@ public class GUI {
         storyButton.setForeground(Color.RED); // Set white text color
         storyButton.setFocusPainted(false); // Remove focus border
         storyButton.addActionListener(e -> {
-            // Create a JTextArea to display the story
-            JTextArea storyTextArea = new JTextArea(
-                "The discovery of \"Fossilium,\" a rare and powerful mineral, disrupts the peaceful life of Animal Crossing, igniting a fierce battle for control over its transformative capabilities. "
-                + "Tom Nook, driven by ambition, commands a high-tech naval fleet to harness Fossilium and build luxurious resorts, while Isabelle, once a gentle bureaucrat, leads a defensive campaign to prevent the mineral’s misuse. "
-                + "As battleships clash and alliances crumble, a neutral faction arises, determined to destroy Fossilium and end the war, regardless of the cost. "
-                + "The islands, scarred by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world."
-            );
-            storyTextArea.setFont(new Font("Arial", Font.PLAIN, 14)); // Set font and size
-            storyTextArea.setLineWrap(true); // Enable line wrapping
-            storyTextArea.setWrapStyleWord(true); // Wrap at word boundaries
-            storyTextArea.setEditable(false); // Make the text area read-only
+            // Create a new JFrame for the story
+            JFrame storyFrame = new JFrame("Story");
+            storyFrame.setSize(400, 600);
+            storyFrame.setLayout(new BorderLayout());
+            storyFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-            // Add the text area to a scroll pane
-            JScrollPane scrollPane = new JScrollPane(storyTextArea);
-            scrollPane.setPreferredSize(new Dimension(600, 400)); // Set preferred size for the scroll pane
-
-            // Show the story in a dialog
-            JOptionPane.showMessageDialog(
-                frame,
-                scrollPane,
-                "Story",
-                JOptionPane.INFORMATION_MESSAGE
+            // Create a JLabel with the story text
+            JLabel storyLabel = new JLabel(
+                "<html><div style='text-align: west;'>" +
+                "The discovery of \"Fossilium,\" a rare and powerful mineral, disrupts the peaceful life of Animal Crossing, igniting a fierce battle for control over its transformative capabilities.<br><br>" +
+                "Tom Nook, driven by ambition, commands a high-tech naval fleet to harness Fossilium and build luxurious resorts, while Isabelle, once a gentle bureaucrat, leads a defensive campaign to prevent the mineral’s misuse.<br><br>" +
+                "As battleships clash and alliances crumble, a neutral faction arises, determined to destroy Fossilium and end the war, regardless of the cost.<br><br>" +
+                "The islands, scarred by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world." +
+                "</div></html>"
             );
+            storyLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+            storyLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+            // Wrap the storyLabel in a JPanel
+            JPanel storyPanel = new JPanel(new BorderLayout());
+            storyPanel.add(storyLabel, BorderLayout.CENTER);
+            storyPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding around the text
+
+            // Add the storyPanel to the center of the frame
+            storyFrame.add(storyPanel, BorderLayout.CENTER);
+
+            JButton okButton = new JButton("OK");
+            okButton.setFont(new Font("Arial", Font.BOLD, 14));
+            okButton.addActionListener(closeEvent -> storyFrame.dispose());
+            JPanel buttonPanel1 = new JPanel();
+            buttonPanel1.add(okButton);
+            storyFrame.add(buttonPanel1, BorderLayout.SOUTH);
+
+
+            // Center the frame on the screen
+            storyFrame.setLocationRelativeTo(frame);
+
+            // Make the frame visible
+            storyFrame.setVisible(true);
         });
         buttonPanel.add(storyButton);
-        buttonPanel.add(Box.createVerticalStrut(12)); // Add spacing between buttons
+        buttonPanel.add(Box.createVerticalStrut(12), BorderLayout.CENTER); // Add spacing between buttons
 
         // Add "Instructions" button
         JButton instructionsButton = new JButton("Instructions");
@@ -175,7 +189,6 @@ public class GUI {
         exitButton.setAlignmentX(JButton.CENTER_ALIGNMENT); // Center the button horizontally
         exitButton.setBackground(new java.awt.Color(255, 165, 0)); // Set orange background
         exitButton.setForeground(Color.RED); // Set white text color
-        exitButton.setFocusPainted(false); // Remove focus border
         exitButton.addActionListener(e -> System.exit(0)); // Exit the application
         buttonPanel.add(exitButton);
 
