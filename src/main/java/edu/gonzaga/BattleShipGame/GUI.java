@@ -796,6 +796,22 @@ public class GUI {
 
         // Control panel with buttons
         JPanel controlPanel = new JPanel();
+
+        // Dropdown for ship size selection
+        sizeSelector = new JComboBox<>(new Integer[]{2,3,4,5}); // Size 2-5
+        sizeSelector.setSelectedIndex(0); // Default to size 2
+        sizeSelector.addActionListener(e -> {
+            shipSize = (int) sizeSelector.getSelectedItem(); // Update ship size
+            clearHighlights();
+            if (!selectedShipCoordinates.isEmpty()) {
+                // Try to place the ship of the new size
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
+        });
+        controlPanel.add(new JLabel("Select Ship Size: "));
+        controlPanel.add(sizeSelector);
+
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
@@ -811,7 +827,7 @@ public class GUI {
         confirmButton.setEnabled(false);
         confirmButton.addActionListener(e -> confirmPlacement());
         
-        statusLabel = new JLabel("Place your 2-segment ship");
+        statusLabel = new JLabel("Player 2: Place your " + shipSize + "-segment ship");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
