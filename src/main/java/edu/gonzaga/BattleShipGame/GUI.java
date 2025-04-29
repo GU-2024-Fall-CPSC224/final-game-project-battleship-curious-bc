@@ -141,6 +141,25 @@ public class GUI {
         // Ensure the image is behind the buttons
         frame.getContentPane().setComponentZOrder(imageLabel, frame.getContentPane().getComponentCount() - 1);
 
+        // Back button
+        JButton backButton = new JButton("Back");
+        backButton.setFont(buttonFont);
+        backButton.setPreferredSize(buttonSize);
+        backButton.setMaximumSize(buttonSize);
+        backButton.setAlignmentX(Component.TOP_ALIGNMENT);
+        backButton.setBackground(new Color(255,165,0));
+        backButton.setForeground(Color.RED);
+        backButton.setFocusPainted(false);
+        // Set position manually (top left corner)
+        backButton.setBounds(10,10,100,40);
+        backButton.addActionListener(e -> {
+            frame.dispose();
+            disPlayerSelection(); // Go back to Player Selection Menu
+        });
+
+        // Add the Back button to the frame
+        imageLabel.add(backButton);
+
         // Make the frame visible
         frame.setVisible(true);
     }
@@ -240,17 +259,17 @@ public class GUI {
     public static void showFactionSelection() {
         // Make the frame
         JFrame frame = new JFrame("Player 1 - Choose Your Island");
-        frame.setSize(800,600);
+        frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
 
         // Upload PNG image
-        ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/3.PNG"));
-        Image scaledImage = orginalIcon.getImage().getScaledInstance(
-            frame.getWidth(),frame.getHeight(),Image.SCALE_SMOOTH
+        ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/3.PNG"));
+        Image scaledImage = originalIcon.getImage().getScaledInstance(
+            frame.getWidth(), frame.getHeight(), Image.SCALE_SMOOTH
         );
         ImageIcon splashImage = new ImageIcon(scaledImage);
 
-        // Add scaled image to JLable
+        // Add scaled image to JLabel
         JLabel imageLabel = new JLabel(splashImage);
         imageLabel.setLayout(new BorderLayout());
         frame.setContentPane(imageLabel);
@@ -259,15 +278,15 @@ public class GUI {
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 0));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(13, 0, 0, 20)); // Adjust padding to move buttons higher
 
         // Title label
         JLabel titleLabel = new JLabel("Player 1 - Choose Your Island");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 28)); // Larger font for the title
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         contentPanel.add(titleLabel);
-        contentPanel.add(Box.createVerticalStrut(50));
+        contentPanel.add(Box.createVerticalStrut(1)); // Add spacing below the title
 
         // Create button panel
         JPanel buttonPanel = new JPanel();
@@ -275,13 +294,13 @@ public class GUI {
         buttonPanel.setOpaque(false);
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Create button with same style as the splash menu
-        Font buttonFont = new Font("Arial", Font.BOLD, 18);
-        Dimension buttonSize = new Dimension(180, 50);
+        // Create button with previous style
+        Font buttonFont = new Font("Arial", Font.BOLD, 18); // Previous font size
+        Dimension buttonSize = new Dimension(260, 73); // Previous button size
 
-        // Faction buttons
+        // Faction buttons with previous size and spacing
         JButton isabelleButton = createFactionButton(
-            "Isabelle of Bell Haven", buttonFont, buttonSize);
+            "Isabelle of Bell Haven", buttonFont, buttonSize, new Color(255, 165, 0)); // Orange
         isabelleButton.addActionListener(e -> {
             playerFaction = "Isabelle of Bell Haven";
             frame.dispose();
@@ -289,7 +308,7 @@ public class GUI {
         });
 
         JButton tomButton = createFactionButton(
-            "Tom Nook of Nook Isle", buttonFont, buttonSize);
+            "Tom Nook of Nook Isle", buttonFont, buttonSize, new Color(0, 105, 255)); // Blue
         tomButton.addActionListener(e -> {
             playerFaction = "Tom Nook of Nook Isle";
             frame.dispose();
@@ -297,7 +316,7 @@ public class GUI {
         });
 
         JButton neutralButton = createFactionButton(
-            "Neutral Village", buttonFont, buttonSize);
+            "Neutral Village", buttonFont, buttonSize, new Color(0, 200, 0)); // Green
         neutralButton.addActionListener(e -> {
             playerFaction = "Neutral Village";
             frame.dispose();
@@ -305,8 +324,8 @@ public class GUI {
         });
 
         JButton antiButton = createFactionButton(
-            "Anti-Fossil Abolitionist", buttonFont, buttonSize);
-        antiButton.addActionListener(e-> {
+            "Anti-Fossil Abolitionist", buttonFont, buttonSize, new Color(128, 128, 128)); // Grey
+        antiButton.addActionListener(e -> {
             playerFaction = "Anti-Fossil Abolitionist";
             frame.dispose();
             selectOpponentFaction();
@@ -314,11 +333,11 @@ public class GUI {
 
         // Add buttons to panel
         buttonPanel.add(isabelleButton);
-        buttonPanel.add(Box.createVerticalStrut(15));
+        buttonPanel.add(Box.createVerticalStrut(12)); // Previous spacing between buttons
         buttonPanel.add(tomButton);
-        buttonPanel.add(Box.createVerticalStrut(15));
+        buttonPanel.add(Box.createVerticalStrut(12));
         buttonPanel.add(neutralButton);
-        buttonPanel.add(Box.createVerticalStrut(15));
+        buttonPanel.add(Box.createVerticalStrut(12));
         buttonPanel.add(antiButton);
 
         // Back button
@@ -337,25 +356,27 @@ public class GUI {
             displaySplashMenu();
         });
 
+        // Add the Back button to the frame
+        imageLabel.add(backButton);
+
         // Add components to content panel
         contentPanel.add(buttonPanel);
 
         // Add components to frame
         imageLabel.setLayout(new BorderLayout());
-        imageLabel.add(backButton);
         imageLabel.add(contentPanel, BorderLayout.CENTER);
 
         frame.setVisible(true);
     }
 
-    public static JButton createFactionButton(String text, Font font, Dimension size) {
+    public static JButton createFactionButton(String text, Font font, Dimension size, Color backgroundColor) {
         JButton button = new JButton(text);
         button.setFont(font);
         button.setPreferredSize(size);
         button.setMaximumSize(size);
         button.setAlignmentX(Component.CENTER_ALIGNMENT);
-        button.setBackground(new Color(255,165,0));
-        button.setForeground(Color.RED);
+        button.setBackground(backgroundColor); // Set the background color
+        button.setForeground(Color.RED); // Keep the text color consistent
         button.setFocusPainted(false);
         return button;
     }
@@ -413,7 +434,7 @@ public class GUI {
     
             // Faction buttons
             JButton isabelleButton = createFactionButton(
-                "Isabelle of Bell Haven", buttonFont, buttonSize);
+                "Isabelle of Bell Haven", buttonFont, buttonSize, new Color(255,165,0));
             isabelleButton.addActionListener(e -> {
                 oppFaction = "Isabelle of Bell Haven";
                 frame.dispose();
@@ -421,7 +442,7 @@ public class GUI {
             });
     
             JButton tomButton = createFactionButton(
-                "Tom Nook of Nook Isle", buttonFont, buttonSize);
+                "Tom Nook of Nook Isle", buttonFont, buttonSize, new Color(255,165,0));
             tomButton.addActionListener(e -> {
                 oppFaction = "Tom Nook of Nook Isle";
                 frame.dispose();
@@ -429,7 +450,7 @@ public class GUI {
             });
     
             JButton neutralButton = createFactionButton(
-                "Neutral Village", buttonFont, buttonSize);
+                "Neutral Village", buttonFont, buttonSize, new Color(255,165,0));
             neutralButton.addActionListener(e -> {
                 oppFaction = "Neutral Village";
                 frame.dispose();
@@ -437,7 +458,7 @@ public class GUI {
             });
     
             JButton antiButton = createFactionButton(
-                "Anti-Fossil Abolitionist", buttonFont, buttonSize);
+                "Anti-Fossil Abolitionist", buttonFont, buttonSize, new Color(255,165,0));
             antiButton.addActionListener(e-> {
                 oppFaction = "Anti-Fossil Abolitionist";
                 frame.dispose();
