@@ -102,6 +102,32 @@ public class GUI {
         buttonPanel.add(playButton);
         buttonPanel.add(Box.createVerticalStrut(12)); // Add spacing between buttons
 
+        // Add "Story" button
+        JButton storyButton = new JButton("Story");
+        storyButton.setFont(buttonFont); // Set larger font
+        storyButton.setPreferredSize(buttonSize); // Set fixed size
+        storyButton.setMaximumSize(buttonSize); // Ensure consistent size
+        storyButton.setAlignmentX(JButton.CENTER_ALIGNMENT); // Center the button horizontally
+        storyButton.setBackground(new java.awt.Color(255, 165, 0)); // Set orange background
+        storyButton.setForeground(Color.RED); // Set white text color
+        storyButton.setFocusPainted(false); // Remove focus border
+        storyButton.addActionListener(e -> {
+            // Create a JLabel with custom font for the instructions
+            JLabel storyLabel = new JLabel(
+                "<html>Story:<br>" +
+                "1. Each player places ships on their board.<br>" +
+                "2. Players take turns firing at enemy coordinates.<br>" +
+                "3. The first to sink all enemy ships wins.<br>" +
+                "- Ship sizes range from 2-5.<br>" +
+                "- Set each ship's orientation as horizontal or vertical.<br>" +
+                "- Use coordinates like A0, B4 to place and attack.</html>"
+            );
+            storyLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set custom font and size
+            JOptionPane.showMessageDialog(frame, storyLabel, "Instructions", JOptionPane.INFORMATION_MESSAGE);
+        });
+        buttonPanel.add(storyButton);
+        buttonPanel.add(Box.createVerticalStrut(12)); // Add spacing between buttons
+
         // Add "Instructions" button
         JButton instructionsButton = new JButton("Instructions");
         instructionsButton.setFont(buttonFont); // Set larger font
@@ -177,7 +203,7 @@ public class GUI {
         frame.setLayout(null);
 
         // Upload PNG image
-        ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/2.PNG"));
+        ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/1.PNG"));
         Image scaledImage = orginalIcon.getImage().getScaledInstance(
             frame.getWidth(),frame.getHeight(),Image.SCALE_SMOOTH
         );
@@ -268,7 +294,7 @@ public class GUI {
         frame.setLayout(new BorderLayout());
 
         // Upload PNG image
-        ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/3.PNG"));
+        ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/1.PNG"));
         Image scaledImage = originalIcon.getImage().getScaledInstance(
             frame.getWidth(), frame.getHeight(), Image.SCALE_SMOOTH
         );
@@ -283,7 +309,7 @@ public class GUI {
         JPanel contentPanel = new JPanel();
         contentPanel.setOpaque(false);
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(13, 0, 0, 20)); // Adjust padding to move buttons higher
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(200, 0, 0, 20)); // Adjust padding to move buttons higher
 
         // Title label
         JLabel titleLabel = new JLabel("Player 1 - Choose Your Island");
@@ -301,7 +327,7 @@ public class GUI {
 
         // Create button with previous style
         Font buttonFont = new Font("Arial", Font.BOLD, 18); // Previous font size
-        Dimension buttonSize = new Dimension(260, 73); // Previous button size
+        Dimension buttonSize = new Dimension(200, 60 ); // Previous button size
 
         // Faction buttons with previous size and spacing
         JButton isabelleButton = createFactionButton(
@@ -402,7 +428,7 @@ public class GUI {
             frame.setLayout(new BorderLayout());
     
             // Upload PNG image
-            ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/3.PNG"));
+            ImageIcon orginalIcon = new ImageIcon(GUI.class.getResource("/1.PNG"));
             Image scaledImage = orginalIcon.getImage().getScaledInstance(
                 frame.getWidth(),frame.getHeight(),Image.SCALE_SMOOTH
             );
