@@ -172,25 +172,6 @@ public class GUI {
         // Ensure the image is behind the buttons
         frame.getContentPane().setComponentZOrder(imageLabel, frame.getContentPane().getComponentCount() - 1);
 
-        // Back button
-        JButton backButton = new JButton("Back");
-        backButton.setFont(buttonFont);
-        backButton.setPreferredSize(buttonSize);
-        backButton.setMaximumSize(buttonSize);
-        backButton.setAlignmentX(Component.TOP_ALIGNMENT);
-        backButton.setBackground(new Color(255,165,0));
-        backButton.setForeground(Color.RED);
-        backButton.setFocusPainted(false);
-        // Set position manually (top left corner)
-        backButton.setBounds(10,10,100,40);
-        backButton.addActionListener(e -> {
-            frame.dispose();
-            disPlayerSelection(); // Go back to Player Selection Menu
-        });
-
-        // Add the Back button to the frame
-        imageLabel.add(backButton);
-
         // Make the frame visible
         frame.setVisible(true);
     }
@@ -254,6 +235,11 @@ public class GUI {
             showFactionSelection();
         });
 
+        // Add button to panel
+        buttonPanel.add(singlePlayerBtn);
+        buttonPanel.add(Box.createVerticalStrut(10));
+        buttonPanel.add(doublePlayerBtn);
+
         // Back button
         JButton backButton = new JButton("Back");
         backButton.setFont(buttonFont);
@@ -267,13 +253,8 @@ public class GUI {
         backButton.setBounds(10,10,100,40);
         backButton.addActionListener(e -> {
             frame.dispose();
-            displaySplashMenu();
+            displaySplashMenu();// Go back to Player Selection Menu
         });
-
-        // Add button to panel
-        buttonPanel.add(singlePlayerBtn);
-        buttonPanel.add(Box.createVerticalStrut(10));
-        buttonPanel.add(doublePlayerBtn);
 
         // Add component to frame
         frame.add(backButton);
@@ -518,7 +499,7 @@ public class GUI {
             backButton.setBounds(10,10,100,40);
             backButton.addActionListener(e -> {
                 frame.dispose();
-                displaySplashMenu();
+                showFactionSelection();
             });
 
             // Add components to content panel
@@ -1108,7 +1089,6 @@ public class GUI {
         timer.start();
 
     }
-
     private static void disableAllAttackButtons() {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
