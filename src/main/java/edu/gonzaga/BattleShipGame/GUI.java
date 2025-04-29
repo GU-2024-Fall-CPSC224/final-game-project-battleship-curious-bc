@@ -949,15 +949,17 @@ public class GUI {
         
         @Override
         public void actionPerformed(ActionEvent e) {
-            // Disable all attack buttons during processing
-            disableAllAttackButtons();
+            // // Disable all attack buttons during processing
+            // disableAllAttackButtons();
+
+            // Disable the clicked button immediately
+            JButton button = (JButton)e.getSource();
+            button.setEnabled(false);
 
             Coordinate target = new Coordinate(row, col);
             lastAttackHit = oppBoard.attack(target); // Track if the attack was a hit
             
             // Update the button that was clicked
-            JButton button = (JButton)e.getSource();
-            button.setEnabled(false);
             button.setBackground(lastAttackHit ? INVALID_COLOR : Color.CYAN);
 
             // Notify the player of the attack result
@@ -978,6 +980,8 @@ public class GUI {
                     showGameOver(currentPlayer.getName() + " wins! " + playerFaction + " prevails!");
                     return;
                 }
+                // Player gets another turn since they hit
+                enableAllAttackButtons();
             } else {
                 statusLabel.setText("Miss! " + (isAI ? "Computer's turn." : "Player 2's turn."));
             }
@@ -1003,21 +1007,28 @@ public class GUI {
         // Disable all attack buttons during AI turn
         disableAllAttackButtons();
 
-        // AI chooses a target and attacks
-        Coordinate target = ((AIPlayer)opponent).chooseAttack(playerBoard);
-        boolean isHit = playerBoard.attack(target);
-        
-        int row = target.getRow();
-        int col = target.getCol();
+        boolean aiHit = true;
+        Coordinate target = null; // Declare target outside the loop
+        int row = 0, col = 0; // Declare row and col outside the loop
 
-        // DEBUG
-        System.out.println("AI attacked row: " + row + ", col: " + col);
-        System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
+        // AI will keep attacking until it misses or the game is over
+        while(aiHit && !playerBoard.isGameOver()) {
+            // AI chooses a target and attacks
+            target = ((AIPlayer)opponent).chooseAttack(playerBoard);
+            aiHit = playerBoard.attack(target);
+            
+            row = target.getRow();
+            col = target.getCol();
 
-        // Update player's board display
-        if (playerButtons[row][col] != null) {
-            playerButtons[row][col].setBackground(isHit ? INVALID_COLOR : Color.CYAN);
-            playerButtons[row][col].setEnabled(false); // Disable the button after the move
+            // DEBUG
+            System.out.println("AI attacked row: " + row + ", col: " + col);
+            System.out.println("Result: " + (aiHit ? "Hit" : "Miss"));
+
+            // Update player's board display
+            if (playerButtons[row][col] != null) {
+                playerButtons[row][col].setBackground(aiHit ? INVALID_COLOR : Color.CYAN);
+                playerButtons[row][col].setEnabled(false); // Disable the button after the move
+            }
         }
         
         // Force UI to refresh
@@ -1025,7 +1036,7 @@ public class GUI {
         gamePanel.repaint();
 
         // Notify the player of the attack result
-        if (isHit) {
+        if (aiHit) {
             opponent.setScore(opponent.getScore() + 1); // Increment AI's score
             String sunkShip = playerBoard.shipNameIfKill(target); // Check if a ship was sunk
 
@@ -1044,21 +1055,28 @@ public class GUI {
                 showGameOver(opponent.getName() + " wins! " + oppFaction + " prevails!");
                 return; // End the game
                 }
+                // Add delay between AI attacks
+                try {
+                    Thread.sleep(1500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             } else {
                 statusLabel.setText("AI hit your ship! Your turn.");
             }  
             
         // Add delay before enabling player's turn
-        Timer timer = new Timer(1500, ev -> {
-            if (!playerBoard.isGameOver()) {
-                statusLabel.setText("Your turn. Attack the enemy fleet!");
-                enableAllAttackButtons(); // Allow player 1 to take their turn
-            }
-        });
-
-        timer.setRepeats(false);
-        timer.start();
-
+        if(!playerBoard.isGameOver()) {
+            Timer timer = new Timer(1500, ev -> {
+                if (!playerBoard.isGameOver()) {
+                    statusLabel.setText("Your turn. Attack the enemy fleet!");
+                    enableAllAttackButtons(); // Allow player 1 to take their turn
+                }
+            });
+    
+            timer.setRepeats(false);
+            timer.start();
+        }
     }
 
     private static void disableAllAttackButtons() {
@@ -1150,8 +1168,10 @@ public class GUI {
             
             // Refresh the boards display
             refreshBoards();
+
+            // Enable attack button for new player
+            enableAllAttackButtons();
         });
-        
         
         // // Show message dialog to pass control
         // if (!isAI) {
