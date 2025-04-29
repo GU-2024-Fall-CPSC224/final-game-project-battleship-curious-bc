@@ -17,11 +17,13 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 
 public class GUI {
     private static boolean isAI = false; //Flag for AI component
@@ -42,12 +44,15 @@ public class GUI {
     private static JFrame gameFrame;
     private static JPanel gamePanel;
     private static List<Coordinate> selectedShipCoordinates = new ArrayList<>();
+    // Add this field to track the selected ship size dynamically
+    private static JComboBox<Integer> sizeSelector;
+    // Add a field to track whether the last attack was a hit
+    private static boolean lastAttackHit = false;
 
     // Color constants
     private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
     private static final Color SHIP_COLOR = new Color(80, 80, 80); // Dark gray for ships
     private static final Color INVALID_COLOR = new Color(255, 100, 100); // Light red for invalid
-    private static final Color HIGHLIGHT_COLOR = new Color(255, 200, 100); // Yellow for highlights
 
     public static void displaySplashMenu() {
         // Create the JFrame
@@ -545,6 +550,22 @@ public class GUI {
 
         // Control panel with buttons
         JPanel controlPanel = new JPanel();
+
+        // Dropdown for ship size selection
+        sizeSelector = new JComboBox<>(new Integer[]{2,3,4,5}); // Size 2-5
+        sizeSelector.setSelectedIndex(0); // Default to size 2
+        sizeSelector.addActionListener(e -> {
+            shipSize = (int) sizeSelector.getSelectedItem(); // Update ship size
+            clearHighlights();
+            if (!selectedShipCoordinates.isEmpty()) {
+                // Try to place the ship of the new size
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
+        });
+        controlPanel.add(new JLabel ("Select Ship Size:"));
+        controlPanel.add(sizeSelector);
+
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
@@ -560,7 +581,7 @@ public class GUI {
         confirmButton.setEnabled(false);
         confirmButton.addActionListener(e -> confirmPlacement());
         
-        statusLabel = new JLabel("Place your 2-segment ship");
+        statusLabel = new JLabel("Place your " + shipSize + "-segment ship");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
@@ -588,6 +609,7 @@ public class GUI {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 JButton button = new JButton();
+                button.setOpaque(true);
                 button.setPreferredSize(new Dimension(40, 40));
                 button.setBackground(WATER_COLOR);
                 button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
@@ -621,6 +643,15 @@ public class GUI {
         @Override
         public void actionPerformed(ActionEvent e) {
             clearHighlights();
+
+            // Check if we're clicking on an already placed ship
+            if (playerButtons[row][col].getBackground() == SHIP_COLOR) {
+                // Check if this is part of a confirmed ship
+                if (playerBoard.getFieldStatus(row, col) == 2) {
+                    statusLabel.setText("Cannot modify confirmed ships! Place a new ship.");
+                    return;
+                }
+            }
             
             List<Coordinate> coords = new ArrayList<>();
             boolean valid = true;
@@ -629,6 +660,7 @@ public class GUI {
                 int r = row + (horizontalPlacement ? 0 : i);
                 int c = col + (horizontalPlacement ? i : 0);
                 
+                // Check bounds and if the spot is already occupied by a confirmed ship
                 if (r >= 10 || c >= 10 || playerBoard.getFieldStatus(r, c) != 0) {
                     valid = false;
                     break;
@@ -646,24 +678,28 @@ public class GUI {
                     }
                 }
                 if (isRemoving) {
-                    // Remove ship
+                    // Remove temporary ship
                     for (Coordinate coord : coords) {
                         playerButtons[coord.getRow()][coord.getCol()].setBackground(WATER_COLOR);
                     }
                     confirmButton.setEnabled(false);
                 } else {
-                    // Place ship
+                    // Show temporary placement
                     for (Coordinate coord : coords) {
-                        playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+                        if (playerBoard.getFieldStatus(coord.getRow(), coord.getCol()) != 2) {
+                            playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+                        }
                     }
                     confirmButton.setEnabled(true);
                 }
+
                 selectedShipCoordinates = coords;
                 statusLabel.setText("Placement looks good! Confirm when ready.");
             } else {
                 // Show invalid placement
                 for (Coordinate coord : coords) {
-                    if (coord.getRow() < 10 && coord.getCol() < 10) {
+                    if (coord.getRow() < 10 && coord.getCol() < 10 && 
+                        playerBoard.getFieldStatus(coord.getRow(), coord.getCol()) != 2) {
                         playerButtons[coord.getRow()][coord.getCol()].setBackground(INVALID_COLOR);
                     }
                 }
@@ -676,9 +712,17 @@ public class GUI {
     private static void clearHighlights() {
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                Color current = playerButtons[row][col].getBackground();
-                if (current.equals(INVALID_COLOR) || current.equals(SHIP_COLOR)) {
-                    playerButtons[row][col].setBackground(WATER_COLOR);
+                // Only clear highlights that aren't confirmed ships
+                if (playerBoard.getFieldStatus(row, col) != 2) {
+                    Color current = playerButtons[row][col].getBackground();
+                    if (current.equals(INVALID_COLOR)) {
+                        playerButtons[row][col].setBackground(WATER_COLOR);
+                    } else if (current.equals(SHIP_COLOR)) {
+                        // Only clear ship color if it's not a confirmed ship
+                        if (playerBoard.getFieldStatus(row, col) != 2) {
+                            playerButtons[row][col].setBackground(WATER_COLOR);
+                        }
+                    }
                 }
             }
         }
@@ -689,6 +733,19 @@ public class GUI {
     // Confirm ship placement
     private static void confirmPlacement() {
         if (selectedShipCoordinates.size() == shipSize) {
+            // First check if all selected coordinates are still valid
+            boolean valid = true;
+            for(Coordinate coord : selectedShipCoordinates) {
+                if(playerBoard.getFieldStatus(coord.getRow(),coord.getCol()) == 2) {
+                    valid = false;
+                    break;
+                }
+            }
+            if(!valid) {
+                statusLabel.setText("Invalid placement! Some spots are already occupied.");
+                return;
+            }
+
             Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
             if (playerBoard.canPlaceShip(ship)) {
                 playerBoard.placeShip(ship);
@@ -699,15 +756,32 @@ public class GUI {
                     playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
                 }
                 
-                if (shipsPlaced < 3) { // Place 3 ships (sizes 2, 3, 4)
-                    shipSize++;
+                if (shipsPlaced < 3) { // Allow for dynamic placement
+                    // shipSize++;
                     statusLabel.setText("Place your " + shipSize + "-segment ship");
                     confirmButton.setEnabled(false);
                     selectedShipCoordinates.clear();
+                    clearHighlights();
                 } else {
                     // If human opponent, switch to their placement phase
                     if (!isAI) {
-                        // switchToOpponentPlacement();
+                        if (currentPlayer.getName().equals("Player 1 (" + playerFaction + ")")) {
+                            // This is player 1 finishing placement
+                            switchToOpponentPlacement();
+                        } else {
+                            // This is player 2 finishing placement
+                            // Swap back to player 1 as current player before battle
+                            Player temp = currentPlayer;
+                            currentPlayer = opponent;
+                            opponent = temp;
+                            
+                            // Also swap the boards
+                            Board tempBoard = playerBoard;
+                            playerBoard = oppBoard;
+                            oppBoard = tempBoard;
+                            
+                            startBattlePhase();
+                        }
                     } else { 
                         startBattlePhase();
                     }
@@ -722,6 +796,10 @@ public class GUI {
         playerBoard = oppBoard;
         oppBoard = tempBoard;
         
+        // Update current player to player 2
+        currentPlayer = opponent;
+        opponent = new Player("Player 1 (" + playerFaction + ")");
+
         // Reset placement variables
         shipSize = 2;
         shipsPlaced = 0;
@@ -741,15 +819,53 @@ public class GUI {
         oppBoardPanel.setVisible(false);
         boardPanel.add(oppBoardPanel);
 
-        // Update controls
-        statusLabel.setText("Player 2 - Place your 2-segment ship");
+        // Control panel with buttons
+        JPanel controlPanel = new JPanel();
+
+        // Dropdown for ship size selection
+        sizeSelector = new JComboBox<>(new Integer[]{2,3,4,5}); // Size 2-5
+        sizeSelector.setSelectedIndex(0); // Default to size 2
+        sizeSelector.addActionListener(e -> {
+            shipSize = (int) sizeSelector.getSelectedItem(); // Update ship size
+            clearHighlights();
+            if (!selectedShipCoordinates.isEmpty()) {
+                // Try to place the ship of the new size
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
+        });
+        controlPanel.add(new JLabel("Select Ship Size: "));
+        controlPanel.add(sizeSelector);
+
+        rotateButton = new JButton("Rotate Ship");
+        rotateButton.addActionListener(e -> {
+            horizontalPlacement = !horizontalPlacement;
+            clearHighlights();
+            if (!selectedShipCoordinates.isEmpty()) {
+                // Try to place the rotated ship
+                Coordinate firstCoord = selectedShipCoordinates.get(0);
+                new PlacementButtonListener(firstCoord.getRow(), firstCoord.getCol()).actionPerformed(null);
+            }
+        });
+        
+        confirmButton = new JButton("Confirm Placement");
         confirmButton.setEnabled(false);
+        confirmButton.addActionListener(e -> confirmPlacement());
         
+        statusLabel = new JLabel("Player 2: Place your " + shipSize + "-segment ship");
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        controlPanel.add(rotateButton);
+        controlPanel.add(confirmButton);
+
+        // Add components to main panel
         gamePanel.add(boardPanel, BorderLayout.CENTER);
-        gamePanel.add(rotateButton, BorderLayout.NORTH);
-        gamePanel.add(confirmButton, BorderLayout.NORTH);
+        gamePanel.add(controlPanel, BorderLayout.NORTH);
         gamePanel.add(statusLabel, BorderLayout.SOUTH);
-        
+
+        // Add panel to frame
+        gameFrame.add(gamePanel);
         gameFrame.revalidate();
         gameFrame.repaint();
     }
@@ -765,25 +881,31 @@ public class GUI {
         JPanel playerBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
         playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + playerFaction + ")"));
         
+        // Initialize player buttons if not already done
+        if (playerButtons == null) {
+            playerButtons = new JButton[10][10];
+        }
+
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                JLabel label = new JLabel();
-                label.setOpaque(true);
-                label.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-                label.setPreferredSize(new Dimension(40, 40));
+                JButton button = new JButton();
+                button.setOpaque(true);
+                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                button.setPreferredSize(new Dimension(40, 40));
                 
                 int status = playerBoard.getFieldStatus(row, col);
                 if (status == 0) {
-                    label.setBackground(Color.BLUE); // Water
+                    button.setBackground(WATER_COLOR); // Water
                 } else if (status == 1) {
-                    label.setBackground(Color.CYAN); // Miss
+                    button.setBackground(Color.CYAN); // Miss
                 } else if (status == 2) {
-                    label.setBackground(Color.GRAY); // Ship (not hit)
+                    button.setBackground(SHIP_COLOR); // Ship (not hit)
                 } else if (status == 3) {
-                    label.setBackground(Color.RED); // Hit
+                    button.setBackground(INVALID_COLOR); // Hit
                 }
                 
-                playerBoardPanel.add(label);
+                playerBoardPanel.add(button);
+                playerButtons[row][col] = button;
             }
         }
         // Enemy board (clickable for attacks)
@@ -791,11 +913,17 @@ public class GUI {
         enemyBoardPanel.setBorder(BorderFactory.createTitledBorder(
             isAI ? "Computer (" + oppFaction + ")" : oppFaction + "'s Waters"));
         
+        // Initialize opponent buttons if not already done
+        if (oppButtons == null) {
+            oppButtons = new JButton[10][10];
+        }
+            
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 JButton button = new JButton();
                 button.setPreferredSize(new Dimension(40, 40));
                 button.setBackground(Color.BLUE);
+                button.setOpaque(true);
                 button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
                 
                 int status = oppBoard.getFieldStatus(row, col);
@@ -803,9 +931,10 @@ public class GUI {
                     button.setBackground(Color.CYAN); // Miss
                     button.setEnabled(false);
                 } else if (status == 3) {
-                    button.setBackground(Color.RED); // Hit
+                    button.setBackground(INVALID_COLOR); // Hit
                     button.setEnabled(false);
                 } else {
+                    // status == 0 or 2 → must be attackable
                     button.addActionListener(new AttackButtonListener(row, col));
                 }
                 
@@ -842,14 +971,22 @@ public class GUI {
         
         @Override
         public void actionPerformed(ActionEvent e) {
+            // Disable all attack buttons during processing
+            disableAllAttackButtons();
+
             Coordinate target = new Coordinate(row, col);
-            boolean isHit = oppBoard.attack(target);
+            lastAttackHit = oppBoard.attack(target); // Track if the attack was a hit
             
+            // Update the button that was clicked
             JButton button = (JButton)e.getSource();
             button.setEnabled(false);
-            button.setBackground(isHit ? Color.RED : Color.CYAN);
+            button.setBackground(lastAttackHit ? INVALID_COLOR : Color.CYAN);
+
+            // Notify the player of the attack result
+            String message = lastAttackHit ? "You hit an enemy ship!" : "You missed!";
+            JOptionPane.showMessageDialog(gameFrame, message, "Attack Result",JOptionPane.INFORMATION_MESSAGE);
             
-            if (isHit) {
+            if (lastAttackHit) {
                 currentPlayer.setScore(currentPlayer.getScore() + 1);
                 String sunkShip = oppBoard.shipNameIfKill(target);
                 if (sunkShip != null) {
@@ -868,7 +1005,12 @@ public class GUI {
             }
             
             if (isAI) {
-                aiTurn();
+                // Delay AI turn slightly for better UX
+                Timer timer = new Timer(1000, ev -> {
+                    aiTurn();
+                });
+                timer.setRepeats(false);
+                timer.start();
             } else {
                 // For 2-player mode, switch turns here
                 switchTurns();
@@ -880,32 +1022,89 @@ public class GUI {
      * AI's turn to attack
      */
     private static void aiTurn() {
+        // Disable all attack buttons during AI turn
+        disableAllAttackButtons();
+
+        // AI chooses a target and attacks
         Coordinate target = ((AIPlayer)opponent).chooseAttack(playerBoard);
         boolean isHit = playerBoard.attack(target);
         
         int row = target.getRow();
         int col = target.getCol();
+
+        // DEBUG
+        System.out.println("AI attacked row: " + row + ", col: " + col);
+        System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
+
+        // Update player's board display
+        if (playerButtons[row][col] != null) {
+            playerButtons[row][col].setBackground(isHit ? INVALID_COLOR : Color.CYAN);
+            playerButtons[row][col].setEnabled(false); // Disable the button after the move
+        }
         
+        // Force UI to refresh
+        gamePanel.revalidate();
+        gamePanel.repaint();
+
+        // Notify the player of the attack result
         if (isHit) {
-            opponent.setScore(opponent.getScore() + 1);
-            String sunkShip = playerBoard.shipNameIfKill(target);
+            opponent.setScore(opponent.getScore() + 1); // Increment AI's score
+            String sunkShip = playerBoard.shipNameIfKill(target); // Check if a ship was sunk
+
             if (sunkShip != null) {
-                opponent.setScore(opponent.getScore() + 2);
-                statusLabel.setText("AI hit your " + sunkShip + "! Your turn.");
+                opponent.setScore(opponent.getScore() + 2); // Bonus points for sinking ship
+                statusLabel.setText("AI hit your " + sunkShip + "!");
             } else {
-                statusLabel.setText("AI hit your ship! Your turn.");
+                statusLabel.setText("AI hit your ship at (" + row + ", " + col + ")!");
             }
+
+            // AI handles the hit for smarter targeting
+            ((AIPlayer) opponent).handleHit(target, playerBoard);
             
+            // Check if player has lost
             if (playerBoard.isGameOver()) {
                 showGameOver(opponent.getName() + " wins! " + oppFaction + " prevails!");
-                return;
-            }
+                return; // End the game
+                }
+            } else {
+                statusLabel.setText("AI hit your ship! Your turn.");
+            }  
             
-            ((AIPlayer)opponent).handleHit(target, playerBoard);
-        } else {
-            statusLabel.setText("AI missed! Your turn.");
+        // Add delay before enabling player's turn
+        Timer timer = new Timer(1500, ev -> {
+            if (!playerBoard.isGameOver()) {
+                statusLabel.setText("Your turn. Attack the enemy fleet!");
+                enableAllAttackButtons(); // Allow player 1 to take their turn
+            }
+        });
+
+        timer.setRepeats(false);
+        timer.start();
+
+    }
+
+    private static void disableAllAttackButtons() {
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (oppButtons[row][col] != null) {
+                    oppButtons[row][col].setEnabled(false);
+                }
+            }
         }
     }
+    
+    private static void enableAllAttackButtons() {
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                if (oppButtons[row][col] != null) {
+                    int status = oppBoard.getFieldStatus(row, col);
+                    if (status == 0 || status == 2) { // Only enable water tiles
+                        oppButtons[row][col].setEnabled(true);
+                    }
+                }
+            }
+        }
+    }    
 
     /**
      * Shows game over screen
@@ -940,61 +1139,145 @@ public class GUI {
     }
     
     private static void switchTurns() {
-        // Swap current player and opponent
-        Player tempPlayer = currentPlayer;
-        currentPlayer = opponent;
-        opponent = tempPlayer;
+        // Hide both boards temporarily
+        gamePanel.removeAll();
+        gameFrame.revalidate();
+        gameFrame.repaint();
+
+        // Show transition screen
+        showTransitionScreen(() -> {
+            // Notify the next player if their board was hit
+            String hitMessage = lastAttackHit
+                ? "Your ship was hit during the last turn!"
+                : "No hits during the last turn.";
+            JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
+
+            // Swap current player and opponent
+            Player tempPlayer = currentPlayer;
+            currentPlayer = opponent;
+            opponent = tempPlayer;
+            
+            // Swap boards
+            Board tempBoard = playerBoard;
+            playerBoard = oppBoard;
+            oppBoard = tempBoard;
+            
+            // Swap button references
+            JButton[][] tempButtons = playerButtons;
+            playerButtons = oppButtons;
+            oppButtons = tempButtons;
+            
+            // Update UI
+            statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
+            
+            // Refresh the boards display
+            refreshBoards();
+        });
         
-        // Swap boards
-        Board tempBoard = playerBoard;
-        playerBoard = oppBoard;
-        oppBoard = tempBoard;
         
-        // Swap button references
-        JButton[][] tempButtons = playerButtons;
-        playerButtons = oppButtons;
-        oppButtons = tempButtons;
-        
-        // Update UI
-        statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
-        
-        // Refresh the boards display
-        refreshBoards();
-        
-        // Show message dialog to pass control
-        JOptionPane.showMessageDialog(gameFrame, 
-            "Pass the device to " + currentPlayer.getName(), 
-            "Switch Turns", 
-            JOptionPane.INFORMATION_MESSAGE);
+        // // Show message dialog to pass control
+        // if (!isAI) {
+        //     // Show message dialog to pass control only in 2-player mode
+        //     JOptionPane.showMessageDialog(gameFrame, 
+        //         "Pass the device to " + currentPlayer.getName(), 
+        //         "Switch Turns", 
+        //         JOptionPane.INFORMATION_MESSAGE);
+        // }
     }
     
+    private static void showTransitionScreen(Runnable onTransitionComplete) {
+        // Create a transition panel
+        JPanel transitionPanel = new JPanel(new BorderLayout());
+        JLabel messageLabel = new JLabel(
+            "<html><div style='text-align: center;'>"
+            + "<h1>Pass the device to " + opponent.getName() + "</h1>"
+            + "<p>Click 'Continue' when ready</p>"
+            + "</div></html>",
+            SwingConstants.CENTER
+        );
+        messageLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        transitionPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JButton continueButton = new JButton("Continue");
+        continueButton.setFont(new Font("Arial", Font.BOLD, 16));
+        continueButton.addActionListener(e -> {
+            gamePanel.removeAll();
+            onTransitionComplete.run();
+            gameFrame.revalidate();
+            gameFrame.repaint();
+        });
+        transitionPanel.add(continueButton, BorderLayout.SOUTH);
+
+        // Add the transition panel to the game frame
+        gamePanel.add(transitionPanel, BorderLayout.CENTER);
+        gameFrame.add(gamePanel);
+        gameFrame.revalidate();
+        gameFrame.repaint();
+    }
+
     // Add this helper method
     private static void refreshBoards() {
         // Refresh player board (showing current player's own ships)
+        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Player board (show ships)
+        JPanel playerBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
+        playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + currentPlayer.getName() + ")"));
+
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
+                JLabel label = new JLabel();
+                label.setOpaque(true);
+                label.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                label.setPreferredSize(new Dimension(40, 40));
+                label.setBackground(WATER_COLOR); // Default to water color
+                
+                // Check the status of the field
                 int status = playerBoard.getFieldStatus(row, col);
-                Color color = Color.BLUE; // Water
-                if (status == 1) color = Color.CYAN; // Miss
-                else if (status == 2) color = Color.GRAY; // Ship
-                else if (status == 3) color = Color.RED; // Hit
-                playerButtons[row][col].setBackground(color);
-                playerButtons[row][col].setEnabled(false); // Disable clicking on own board
+                if(status == 0) {
+                    label.setBackground(WATER_COLOR); // Water
+                } else if (status == 1) {
+                    label.setBackground(new Color(173, 216, 230));
+                } else if (status == 2) {
+                    label.setBackground(SHIP_COLOR); // Ship
+                } else if (status == 3) {
+                    label.setBackground(INVALID_COLOR); // Hit
+                }
+                playerBoardPanel.add(label);
             }
         }
+        boardsPanel.add(playerBoardPanel);
+        // Opponent board (clickable for attacks)
+        JPanel enemyBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
+        enemyBoardPanel.setBorder(BorderFactory.createTitledBorder("Enemy Waters (" + opponent.getName() + ")"));
         
-        // Refresh enemy board (showing attack results)
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(40, 40));
+                button.setBackground(WATER_COLOR);
+                button.setOpaque(true);
+                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                
                 int status = oppBoard.getFieldStatus(row, col);
-                if (status == 1 || status == 3) { // Show hits/misses
-                    oppButtons[row][col].setBackground(status == 1 ? Color.CYAN : Color.RED);
-                    oppButtons[row][col].setEnabled(false);
+                if (status == 1) {
+                    button.setBackground(Color.CYAN); // Miss
+                    button.setEnabled(false);
+                } else if (status == 3) {
+                    button.setBackground(INVALID_COLOR); // Hit
+                    button.setEnabled(false);
                 } else {
-                    oppButtons[row][col].setBackground(Color.BLUE);
-                    oppButtons[row][col].setEnabled(true); // Allow attacks on empty spots
+                    // status == 0 or 2 → must be attackable
+                    button.addActionListener(new AttackButtonListener(row, col));
                 }
+                enemyBoardPanel.add(button);
+                oppButtons[row][col] = button;
             }
         }
+        boardsPanel.add(enemyBoardPanel);
+        gamePanel.add(boardsPanel, BorderLayout.CENTER);
+        gameFrame.revalidate();
+        gameFrame.repaint();
     }
 }
