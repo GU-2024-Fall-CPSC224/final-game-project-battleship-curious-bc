@@ -22,6 +22,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 
@@ -112,18 +114,29 @@ public class GUI {
         storyButton.setForeground(Color.RED); // Set white text color
         storyButton.setFocusPainted(false); // Remove focus border
         storyButton.addActionListener(e -> {
-            // Create a JLabel with custom font for the instructions
-            JLabel storyLabel = new JLabel(
-                "<html>Story:<br>" +
-                "1. Each player places ships on their board.<br>" +
-                "2. Players take turns firing at enemy coordinates.<br>" +
-                "3. The first to sink all enemy ships wins.<br>" +
-                "- Ship sizes range from 2-5.<br>" +
-                "- Set each ship's orientation as horizontal or vertical.<br>" +
-                "- Use coordinates like A0, B4 to place and attack.</html>"
+            // Create a JTextArea to display the story
+            JTextArea storyTextArea = new JTextArea(
+                "The discovery of \"Fossilium,\" a rare and powerful mineral, disrupts the peaceful life of Animal Crossing, igniting a fierce battle for control over its transformative capabilities. "
+                + "Tom Nook, driven by ambition, commands a high-tech naval fleet to harness Fossilium and build luxurious resorts, while Isabelle, once a gentle bureaucrat, leads a defensive campaign to prevent the mineral’s misuse. "
+                + "As battleships clash and alliances crumble, a neutral faction arises, determined to destroy Fossilium and end the war, regardless of the cost. "
+                + "The islands, scarred by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world."
             );
-            storyLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set custom font and size
-            JOptionPane.showMessageDialog(frame, storyLabel, "Instructions", JOptionPane.INFORMATION_MESSAGE);
+            storyTextArea.setFont(new Font("Arial", Font.PLAIN, 14)); // Set font and size
+            storyTextArea.setLineWrap(true); // Enable line wrapping
+            storyTextArea.setWrapStyleWord(true); // Wrap at word boundaries
+            storyTextArea.setEditable(false); // Make the text area read-only
+
+            // Add the text area to a scroll pane
+            JScrollPane scrollPane = new JScrollPane(storyTextArea);
+            scrollPane.setPreferredSize(new Dimension(600, 400)); // Set preferred size for the scroll pane
+
+            // Show the story in a dialog
+            JOptionPane.showMessageDialog(
+                frame,
+                scrollPane,
+                "Story",
+                JOptionPane.INFORMATION_MESSAGE
+            );
         });
         buttonPanel.add(storyButton);
         buttonPanel.add(Box.createVerticalStrut(12)); // Add spacing between buttons
