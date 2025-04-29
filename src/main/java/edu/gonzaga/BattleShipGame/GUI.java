@@ -24,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import javax.swing.border.Border;
 
 public class GUI {
     private static boolean isAI = false; //Flag for AI component
@@ -46,6 +47,8 @@ public class GUI {
     private static List<Coordinate> selectedShipCoordinates = new ArrayList<>();
     // Add this field to track the selected ship size dynamically
     private static JComboBox<Integer> sizeSelector;
+    // Add a field to track whether the last attack was a hit
+    private static boolean lastAttackHit = false;
 
     // Color constants
     private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
@@ -863,23 +866,24 @@ public class GUI {
 
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
-                JLabel label = new JLabel();
-                label.setOpaque(true);
-                label.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-                label.setPreferredSize(new Dimension(40, 40));
+                JButton button = new JButton();
+                button.setOpaque(true);
+                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                button.setPreferredSize(new Dimension(40, 40));
                 
                 int status = playerBoard.getFieldStatus(row, col);
                 if (status == 0) {
-                    label.setBackground(WATER_COLOR); // Water
+                    button.setBackground(WATER_COLOR); // Water
                 } else if (status == 1) {
-                    label.setBackground(new Color(173, 216, 230)); // Miss
+                    button.setBackground(Color.CYAN); // Miss
                 } else if (status == 2) {
-                    label.setBackground(SHIP_COLOR); // Ship (not hit)
+                    button.setBackground(SHIP_COLOR); // Ship (not hit)
                 } else if (status == 3) {
-                    label.setBackground(INVALID_COLOR); // Hit
+                    button.setBackground(INVALID_COLOR); // Hit
                 }
                 
-                playerBoardPanel.add(label);
+                playerBoardPanel.add(button);
+                playerButtons[row][col] = button;
             }
         }
         // Enemy board (clickable for attacks)
@@ -949,14 +953,18 @@ public class GUI {
             disableAllAttackButtons();
 
             Coordinate target = new Coordinate(row, col);
-            boolean isHit = oppBoard.attack(target);
+            lastAttackHit = oppBoard.attack(target); // Track if the attack was a hit
             
             // Update the button that was clicked
             JButton button = (JButton)e.getSource();
             button.setEnabled(false);
-            button.setBackground(isHit ? INVALID_COLOR : Color.CYAN);
+            button.setBackground(lastAttackHit ? INVALID_COLOR : Color.CYAN);
+
+            // Notify the player of the attack result
+            String message = lastAttackHit ? "You hit an enemy ship!" : "You missed!";
+            JOptionPane.showMessageDialog(gameFrame, message, "Attack Result",JOptionPane.INFORMATION_MESSAGE);
             
-            if (isHit) {
+            if (lastAttackHit) {
                 currentPlayer.setScore(currentPlayer.getScore() + 1);
                 String sunkShip = oppBoard.shipNameIfKill(target);
                 if (sunkShip != null) {
@@ -1002,17 +1010,30 @@ public class GUI {
         int row = target.getRow();
         int col = target.getCol();
 
+        // DEBUG
+        System.out.println("AI attacked row: " + row + ", col: " + col);
+        System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
+
         // Update player's board display
-        playerButtons[row][col].setBackground(isHit ? INVALID_COLOR : Color.CYAN);
+        if (playerButtons[row][col] != null) {
+            playerButtons[row][col].setBackground(isHit ? INVALID_COLOR : Color.CYAN);
+            playerButtons[row][col].setEnabled(false); // Disable the button after the move
+        }
         
+        // Force UI to refresh
+        gamePanel.revalidate();
+        gamePanel.repaint();
+
+        // Notify the player of the attack result
         if (isHit) {
-            opponent.setScore(opponent.getScore() + 1);
-            String sunkShip = playerBoard.shipNameIfKill(target);
+            opponent.setScore(opponent.getScore() + 1); // Increment AI's score
+            String sunkShip = playerBoard.shipNameIfKill(target); // Check if a ship was sunk
+
             if (sunkShip != null) {
-                opponent.setScore(opponent.getScore() + 2);
-                statusLabel.setText("AI hit your " + sunkShip + "! Your turn.");
+                opponent.setScore(opponent.getScore() + 2); // Bonus points for sinking ship
+                statusLabel.setText("AI hit your " + sunkShip + "!");
             } else {
-                statusLabel.setText("AI hit your ship! Your turn.");
+                statusLabel.setText("AI hit your ship at (" + row + ", " + col + ")!");
             }
 
             // AI handles the hit for smarter targeting
@@ -1021,7 +1042,7 @@ public class GUI {
             // Check if player has lost
             if (playerBoard.isGameOver()) {
                 showGameOver(opponent.getName() + " wins! " + oppFaction + " prevails!");
-                return;
+                return; // End the game
                 }
             } else {
                 statusLabel.setText("AI hit your ship! Your turn.");
@@ -1031,7 +1052,7 @@ public class GUI {
         Timer timer = new Timer(1500, ev -> {
             if (!playerBoard.isGameOver()) {
                 statusLabel.setText("Your turn. Attack the enemy fleet!");
-                enableAllAttackButtons();
+                enableAllAttackButtons(); // Allow player 1 to take their turn
             }
         });
 
@@ -1096,64 +1117,145 @@ public class GUI {
     }
     
     private static void switchTurns() {
-        // Swap current player and opponent
-        Player tempPlayer = currentPlayer;
-        currentPlayer = opponent;
-        opponent = tempPlayer;
+        // Hide both boards temporarily
+        gamePanel.removeAll();
+        gameFrame.revalidate();
+        gameFrame.repaint();
+
+        // Show transition screen
+        showTransitionScreen(() -> {
+            // Notify the next player if their board was hit
+            String hitMessage = lastAttackHit
+                ? "Your ship was hit during the last turn!"
+                : "No hits during the last turn.";
+            JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
+
+            // Swap current player and opponent
+            Player tempPlayer = currentPlayer;
+            currentPlayer = opponent;
+            opponent = tempPlayer;
+            
+            // Swap boards
+            Board tempBoard = playerBoard;
+            playerBoard = oppBoard;
+            oppBoard = tempBoard;
+            
+            // Swap button references
+            JButton[][] tempButtons = playerButtons;
+            playerButtons = oppButtons;
+            oppButtons = tempButtons;
+            
+            // Update UI
+            statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
+            
+            // Refresh the boards display
+            refreshBoards();
+        });
         
-        // Swap boards
-        Board tempBoard = playerBoard;
-        playerBoard = oppBoard;
-        oppBoard = tempBoard;
         
-        // Swap button references
-        JButton[][] tempButtons = playerButtons;
-        playerButtons = oppButtons;
-        oppButtons = tempButtons;
-        
-        // Update UI
-        statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
-        
-        // Refresh the boards display
-        refreshBoards();
-        
-        // Show message dialog to pass control
-        if (!isAI) {
-            // Show message dialog to pass control only in 2-player mode
-            JOptionPane.showMessageDialog(gameFrame, 
-                "Pass the device to " + currentPlayer.getName(), 
-                "Switch Turns", 
-                JOptionPane.INFORMATION_MESSAGE);
-        }
+        // // Show message dialog to pass control
+        // if (!isAI) {
+        //     // Show message dialog to pass control only in 2-player mode
+        //     JOptionPane.showMessageDialog(gameFrame, 
+        //         "Pass the device to " + currentPlayer.getName(), 
+        //         "Switch Turns", 
+        //         JOptionPane.INFORMATION_MESSAGE);
+        // }
     }
     
+    private static void showTransitionScreen(Runnable onTransitionComplete) {
+        // Create a transition panel
+        JPanel transitionPanel = new JPanel(new BorderLayout());
+        JLabel messageLabel = new JLabel(
+            "<html><div style='text-align: center;'>"
+            + "<h1>Pass the device to " + opponent.getName() + "</h1>"
+            + "<p>Click 'Continue' when ready</p>"
+            + "</div></html>",
+            SwingConstants.CENTER
+        );
+        messageLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        transitionPanel.add(messageLabel, BorderLayout.CENTER);
+
+        JButton continueButton = new JButton("Continue");
+        continueButton.setFont(new Font("Arial", Font.BOLD, 16));
+        continueButton.addActionListener(e -> {
+            gamePanel.removeAll();
+            onTransitionComplete.run();
+            gameFrame.revalidate();
+            gameFrame.repaint();
+        });
+        transitionPanel.add(continueButton, BorderLayout.SOUTH);
+
+        // Add the transition panel to the game frame
+        gamePanel.add(transitionPanel, BorderLayout.CENTER);
+        gameFrame.add(gamePanel);
+        gameFrame.revalidate();
+        gameFrame.repaint();
+    }
+
     // Add this helper method
     private static void refreshBoards() {
         // Refresh player board (showing current player's own ships)
+        JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Player board (show ships)
+        JPanel playerBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
+        playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + currentPlayer.getName() + ")"));
+
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
+                JLabel label = new JLabel();
+                label.setOpaque(true);
+                label.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                label.setPreferredSize(new Dimension(40, 40));
+                label.setBackground(WATER_COLOR); // Default to water color
+                
+                // Check the status of the field
                 int status = playerBoard.getFieldStatus(row, col);
-                Color color = WATER_COLOR; // Water
-                if (status == 1) color = Color.CYAN; // Miss
-                else if (status == 2) color = SHIP_COLOR; // Ship
-                else if (status == 3) color = INVALID_COLOR; // Hit
-                playerButtons[row][col].setBackground(color);
-                playerButtons[row][col].setEnabled(false); // Disable clicking on own board
+                if(status == 0) {
+                    label.setBackground(WATER_COLOR); // Water
+                } else if (status == 1) {
+                    label.setBackground(new Color(173, 216, 230));
+                } else if (status == 2) {
+                    label.setBackground(SHIP_COLOR); // Ship
+                } else if (status == 3) {
+                    label.setBackground(INVALID_COLOR); // Hit
+                }
+                playerBoardPanel.add(label);
             }
         }
+        boardsPanel.add(playerBoardPanel);
+        // Opponent board (clickable for attacks)
+        JPanel enemyBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
+        enemyBoardPanel.setBorder(BorderFactory.createTitledBorder("Enemy Waters (" + opponent.getName() + ")"));
         
-        // Refresh enemy board (showing attack results)
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(40, 40));
+                button.setBackground(WATER_COLOR);
+                button.setOpaque(true);
+                button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+                
                 int status = oppBoard.getFieldStatus(row, col);
-                if (status == 1 || status == 3) { // Show hits/misses
-                    oppButtons[row][col].setBackground(status == 1 ? Color.CYAN : INVALID_COLOR);
-                    oppButtons[row][col].setEnabled(false);
+                if (status == 1) {
+                    button.setBackground(Color.CYAN); // Miss
+                    button.setEnabled(false);
+                } else if (status == 3) {
+                    button.setBackground(INVALID_COLOR); // Hit
+                    button.setEnabled(false);
                 } else {
-                    oppButtons[row][col].setBackground(WATER_COLOR);
-                    oppButtons[row][col].setEnabled(true); // Allow attacks on empty spots
+                    // status == 0 or 2 → must be attackable
+                    button.addActionListener(new AttackButtonListener(row, col));
                 }
+                enemyBoardPanel.add(button);
+                oppButtons[row][col] = button;
             }
         }
+        boardsPanel.add(enemyBoardPanel);
+        gamePanel.add(boardsPanel, BorderLayout.CENTER);
+        gameFrame.revalidate();
+        gameFrame.repaint();
     }
 }    
