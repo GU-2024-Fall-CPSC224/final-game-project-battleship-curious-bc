@@ -121,14 +121,16 @@ public class GUI {
                 + "As battleships clash and alliances crumble, a neutral faction arises, determined to destroy Fossilium and end the war, regardless of the cost. "
                 + "The islands, scarred by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world."
             );
+
             storyTextArea.setFont(new Font("Arial", Font.PLAIN, 14)); // Set font and size
             storyTextArea.setLineWrap(true); // Enable line wrapping
             storyTextArea.setWrapStyleWord(true); // Wrap at word boundaries
             storyTextArea.setEditable(false); // Make the text area read-only
+            storyTextArea.setBackground(new Color(255, 255, 255)); // Set white background
 
             // Add the text area to a scroll pane
             JScrollPane scrollPane = new JScrollPane(storyTextArea);
-            scrollPane.setPreferredSize(new Dimension(600, 400)); // Set preferred size for the scroll pane
+            scrollPane.setPreferredSize(new Dimension(400, 200)); // Set preferred size for the scroll pane
 
             // Show the story in a dialog
             JOptionPane.showMessageDialog(
