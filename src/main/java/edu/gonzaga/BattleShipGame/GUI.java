@@ -981,8 +981,6 @@ public class GUI {
                     showGameOver(currentPlayer.getName() + " wins! " + playerFaction + " prevails!");
                     return;
                 }
-                // Player gets another turn since they hit
-                enableAllAttackButtons();
             } else {
                 statusLabel.setText("Miss! " + (isAI ? "Computer's turn." : "Player 2's turn."));
             }
