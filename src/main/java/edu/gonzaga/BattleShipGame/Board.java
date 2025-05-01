@@ -3,13 +3,13 @@ package edu.gonzaga.BattleShipGame;
 import java.util.ArrayList; 
 import java.util.Iterator;
 
-
 public class Board {
     private int boardX = 10;
     private int boardY = 10; 
-
+ 
     private int[][] fieldStatic;
     ArrayList<Ship> fleet = new ArrayList<>();
+    ArrayList<Island> islands = new ArrayList<>();
 
     //Default constructor
     public Board(){
@@ -76,8 +76,34 @@ public class Board {
     }
 
     // Check if an island can be placed on the board (2x2)
+    public boolean canPlaceIsland(Island island) {
+        for (Coordinate coord : island.getCoordinates()) {
+            int row = coord.getRow();
+            int col = coord.getCol();
+            if(row < 0 || row >= boardX || col < 0 || col >= boardY || fieldStatic[row][col] != 0) {
+                return false; // Out of bounds or collision with another ship
+            }
+        }
+        return true; // All coordinates are valid
+    }
 
+    // Place island on the board
+    public void setFieldStatus(int row, int col, int status) {
+        if (row < 0 || row >= boardX || col < 0 || col >= boardY) {
+            throw new IllegalArgumentException("Invalid coordinates");
+        }
+        fieldStatic[row][col] = status; // Set the field status
+    }
 
+    // Get the field status
+    public void placeIsland(Island island) {
+        for (Coordinate coord : island.getCoordinates()) {
+            int row = coord.getRow();
+            int col = coord.getCol();
+            fieldStatic[row][col] = 4; // Mark as island
+        }
+        islands.add(island); // Add to the islands list
+    }
 
 
     public void removeShip(Ship theShip){
