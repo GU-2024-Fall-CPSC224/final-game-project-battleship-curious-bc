@@ -50,6 +50,7 @@ public class GUI {
     private static boolean lastAttackHit = false;
     private static String playerName;
     private static String opponentName;
+    private static boolean isPlacingIsland = false; // Flag to track if we're placing an Island
 
     // Color constants
     private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
@@ -304,7 +305,7 @@ public class GUI {
         }
 
         // Make the frame
-        JFrame frame = new JFrame(playerName + " - Choose Your Island");
+        JFrame frame = new JFrame(playerName + " - Choose Your Faction");
         frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
 
@@ -327,7 +328,7 @@ public class GUI {
         contentPanel.setBorder(BorderFactory.createEmptyBorder(200, 0, 0, 20)); // Adjust padding to move buttons higher
 
         // Title label
-        JLabel titleLabel = new JLabel(playerName + " - Choose Your Island");
+        JLabel titleLabel = new JLabel(playerName + " - Choose Your Faction");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28)); // Larger font for the title
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -446,7 +447,7 @@ public class GUI {
             }
 
             // For human opponent, show faction selection for Player 2
-            JFrame frame = new JFrame(opponentName + " - Choose Your Island");
+            JFrame frame = new JFrame(opponentName + " - Choose Your Faction");
             frame.setSize(800, 600);
             frame.setLayout(new BorderLayout());
 
@@ -469,7 +470,7 @@ public class GUI {
             contentPanel.setBorder(BorderFactory.createEmptyBorder(200, 0, 0, 20)); // Adjust padding to move buttons lower
 
             // Title label
-            JLabel titleLabel = new JLabel(opponentName + " - Choose Your Island");
+            JLabel titleLabel = new JLabel(opponentName + " - Choose Your Faction");
             titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
             titleLabel.setForeground(Color.WHITE);
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -618,6 +619,18 @@ public class GUI {
         controlPanel.add(new JLabel ("Select Ship Size:"));
         controlPanel.add(sizeSelector);
 
+        // Dropdown for selecting placement type
+        JComboBox<String> placementTypeSelector = new JComboBox<>(new String[]{"Ship", "Island"}); 
+        placementTypeSelector.addActionListener(e -> {
+            isPlacingIsland = placementTypeSelector.getSelectedItem().equals("Island");
+            shipSize = isPlacingIsland ? 2 : (int) sizeSelector.getSelectedItem(); // Set ship size to 2 for island
+            clearHighlights();
+            statusLabel.setText(isPlacingIsland ? "Place your 2x2 Island" : "Place your " + shipSize + "-segment ship");
+        }); 
+
+        controlPanel.add(new JLabel("Place: "));
+        controlPanel.add(placementTypeSelector);
+
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
@@ -695,6 +708,41 @@ public class GUI {
         @Override
         public void actionPerformed(ActionEvent e) {
             clearHighlights();
+            // If placing an island
+            if(isPlacingIsland) {
+                List<Coordinate> islandCoords = new ArrayList<>();
+                boolean valid = true;
+
+                for(int r = row; r < row + 2; r++) {
+                    for(int c = col; c < col + 2; c++) {
+                        if(r >= 10 || c >= 10 || playerBoard.getFieldStatus(r, c) != 0) {
+                            valid = false;
+                            break;
+                        }
+                        islandCoords.add(new Coordinate(r, c));
+                    }
+                }
+                
+                if(valid) {
+                    // Highlight island placement
+                    for(Coordinate coord : islandCoords) {
+                        playerButtons[coord.getRow()][coord.getCol()].setBackground(Color.YELLOW);
+                    }
+                    selectedShipCoordinates = islandCoords;
+                    confirmButton.setEnabled(true);
+                    statusLabel.setText("Island placement looks good! Confirm when ready.");
+                } else {
+                    //Highlight invalid placement
+                    for(Coordinate coord : islandCoords) {
+                        if(coord.getRow() < 10 && coord.getCol() < 10 && 
+                           playerBoard.getFieldStatus(coord.getRow(), coord.getCol()) != 2) {
+                            playerButtons[coord.getRow()][coord.getCol()].setBackground(INVALID_COLOR);
+                        }
+                    }
+                    statusLabel.setText("Invalid island placement! Try another position.");
+                }
+                return;
+            }
 
             // Check if we're clicking on an already placed ship
             if (playerButtons[row][col].getBackground() == SHIP_COLOR) {
@@ -784,58 +832,73 @@ public class GUI {
 
     // Confirm ship placement
     private static void confirmPlacement() {
-        if (selectedShipCoordinates.size() == shipSize) {
-            // First check if all selected coordinates are still valid
-            boolean valid = true;
-            for(Coordinate coord : selectedShipCoordinates) {
-                if(playerBoard.getFieldStatus(coord.getRow(),coord.getCol()) == 2) {
-                    valid = false;
-                    break;
-                }
-            }
-            if(!valid) {
-                statusLabel.setText("Invalid placement! Some spots are already occupied.");
-                return;
-            }
-
-            Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
-            if (playerBoard.canPlaceShip(ship)) {
-                playerBoard.placeShip(ship);
-                shipsPlaced++;
-                
-                // Mark all confirmed ship positions as gray
-                for (Coordinate coord : selectedShipCoordinates) {
+        if(isPlacingIsland) {
+            // Confirm ship placement
+            if(selectedShipCoordinates.size() == 4) {
+                for(Coordinate coord: selectedShipCoordinates) {
+                    // playerBoard.setFieldStatus(coord.getRow(), coord.getCol(), 2); // Mark as occupied
                     playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
                 }
-                
-                if (shipsPlaced < 3) { // Allow for dynamic placement
-                    // shipSize++;
-                    statusLabel.setText("Place your " + shipSize + "-segment ship");
-                    confirmButton.setEnabled(false);
-                    selectedShipCoordinates.clear();
-                    clearHighlights();
-                } else {
-                    // If human opponent, switch to their placement phase
-                    if (!isAI) {
-                        if (currentPlayer.getName().equals("Player 1 (" + playerFaction + ")")) {
-                            // This is player 1 finishing placement
-                            switchToOpponentPlacement();
-                        } else {
-                            // This is player 2 finishing placement
-                            // Swap back to player 1 as current player before battle
-                            Player temp = currentPlayer;
-                            currentPlayer = opponent;
-                            opponent = temp;
-                            
-                            // Also swap the boards
-                            Board tempBoard = playerBoard;
-                            playerBoard = oppBoard;
-                            oppBoard = tempBoard;
-                            
-                            startBattlePhase();
+                shipsPlaced++;
+                selectedShipCoordinates.clear();
+                confirmButton.setEnabled(false);
+                statusLabel.setText("Island placed! Place your next ship.");
+            }
+            else {
+                if (selectedShipCoordinates.size() == shipSize) {
+                    // First check if all selected coordinates are still valid
+                    boolean valid = true;
+                    for(Coordinate coord : selectedShipCoordinates) {
+                        if(playerBoard.getFieldStatus(coord.getRow(),coord.getCol()) == 2) {
+                            valid = false;
+                            break;
                         }
-                    } else { 
-                        startBattlePhase();
+                    }
+                    if(!valid) {
+                        statusLabel.setText("Invalid placement! Some spots are already occupied.");
+                        return;
+                    }
+        
+                    Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
+                    if (playerBoard.canPlaceShip(ship)) {
+                        playerBoard.placeShip(ship);
+                        shipsPlaced++;
+                        
+                        // Mark all confirmed ship positions as gray
+                        for (Coordinate coord : selectedShipCoordinates) {
+                            playerButtons[coord.getRow()][coord.getCol()].setBackground(SHIP_COLOR);
+                        }
+                        
+                        if (shipsPlaced < 3) { // Allow for dynamic placement
+                            // shipSize++;
+                            statusLabel.setText("Place your " + shipSize + "-segment ship");
+                            confirmButton.setEnabled(false);
+                            selectedShipCoordinates.clear();
+                            clearHighlights();
+                        } else {
+                            // If human opponent, switch to their placement phase
+                            if (!isAI) {
+                                if (currentPlayer.getName().equals("Player 1 (" + playerFaction + ")")) {
+                                    // This is player 1 finishing placement
+                                    switchToOpponentPlacement();
+                                } else {
+                                    // This is player 2 finishing placement
+                                    // Swap back to player 1 as current player before battle
+                                    Player temp = currentPlayer;
+                                    currentPlayer = opponent;
+                                    opponent = temp;
+                                    
+                                    // Also swap the boards
+                                    Board tempBoard = playerBoard;
+                                    playerBoard = oppBoard;
+                                    oppBoard = tempBoard;
+                                    
+                                    startBattlePhase();
+                                }
+                            } else { 
+                                startBattlePhase();
+                            }
+                        }
                     }
                 }
             }

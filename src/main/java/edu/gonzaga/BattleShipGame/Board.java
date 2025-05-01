@@ -61,18 +61,24 @@ public class Board {
         return true;
     }    
 
-public void placeShip(Ship theShip) {
-    if (canPlaceShip(theShip)) {
-        for (Coordinate coord : theShip.getCoordinates()) {
-            int row = coord.getRow();
-            int col = coord.getCol();
-            fieldStatic[row][col] = 2; // Mark the field as occupied by a ship
+    // Place ship on the board
+    public void placeShip(Ship theShip) {
+        if (canPlaceShip(theShip)) {
+            for (Coordinate coord : theShip.getCoordinates()) {
+                int row = coord.getRow();
+                int col = coord.getCol();
+                fieldStatic[row][col] = 2; // Mark the field as occupied by a ship
+            }
+            fleet.add(theShip); // Add the ship to the fleet
+        } else {
+            throw new IllegalStateException("Cannot place ship at given coordinates.");
         }
-        fleet.add(theShip); // Add the ship to the fleet
-    } else {
-        throw new IllegalStateException("Cannot place ship at given coordinates.");
     }
-}
+
+    // Check if an island can be placed on the board (2x2)
+
+
+
 
     public void removeShip(Ship theShip){
         Iterator<Coordinate> iterate = theShip.getCoordinates().iterator();

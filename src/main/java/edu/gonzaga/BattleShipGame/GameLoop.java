@@ -106,12 +106,11 @@ public class GameLoop {
                 currentPlayer.setScore(currentPlayer.getScore() + 1);
                 String sunk = opponentBoard.shipNameIfKill(target);
                 if (sunk != null) {
-                    System.out.println("You sunk the " + sunk + "!");
+                    System.out.println("You sunk the " + sunk + "!"); // sunk is a String?
                     currentPlayer.setScore(currentPlayer.getScore() + 2);
                 }
-                if (currentPlayer instanceof AIPlayer) {
-                    ((AIPlayer) currentPlayer).handleHit(target, opponentBoard);
-                }
+                currentPlayer.handleHit(target, opponentBoard); // ships hit number not lowering
+                
             } else {
                 System.out.println("Miss.");
             }

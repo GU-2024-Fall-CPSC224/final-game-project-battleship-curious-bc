@@ -28,4 +28,7 @@ public class Player {
         this.score = score;
     }
 
+    public void handleHit(Coordinate hitCoord, Board board) {
+    }
+
 }

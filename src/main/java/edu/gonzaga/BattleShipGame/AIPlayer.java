@@ -68,6 +68,7 @@ public class AIPlayer extends Player {
         return choice;
     }
 
+    @Override
     // If a hit, enqueue adjacent positions
     public void handleHit(Coordinate hitCoord, Board board) {
         if (!smartMode) return;

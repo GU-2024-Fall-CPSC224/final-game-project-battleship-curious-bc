@@ -17,6 +17,10 @@ public class Ship {
         return shipName;
     }
 
+    public int getLength() {
+        return coords.size(); // returns length of ship
+    }
+
     // Returns the list of coordinates occupied by the ship
     public List<Coordinate> getCoordinates() {
         return new ArrayList<>(coords); // Return copy to prevent external modification
