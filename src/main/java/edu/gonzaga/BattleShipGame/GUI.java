@@ -48,6 +48,8 @@ public class GUI {
     private static JComboBox<Integer> sizeSelector;
     // Add a field to track whether the last attack was a hit
     private static boolean lastAttackHit = false;
+    private static String playerName;
+    private static String opponentName;
 
     // Color constants
     private static final Color WATER_COLOR = new Color(0, 105, 148); // Dark blue water
@@ -124,7 +126,7 @@ public class GUI {
                 "The discovery of \"Fossilium,\" a rare and powerful mineral, disrupts the peaceful life of Animal Crossing, igniting a fierce battle for control over its transformative capabilities.<br><br>" +
                 "Tom Nook, driven by ambition, commands a high-tech naval fleet to harness Fossilium and build luxurious resorts, while Isabelle, once a gentle bureaucrat, leads a defensive campaign to prevent the mineral’s misuse.<br><br>" +
                 "As battleships clash and alliances crumble, a neutral faction arises, determined to destroy Fossilium and end the war, regardless of the cost.<br><br>" +
-                "The islands, scarred by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world." +
+                "The islands, scared by missiles and destruction, force the villagers to grapple with the devastating consequences of their greed and the fragile bonds that once united their world." +
                 "</div></html>"
             );
             storyLabel.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
@@ -295,8 +297,14 @@ public class GUI {
 
     // Show the faction selection frame
     public static void showFactionSelection() {
+        // Prompt for player name
+        playerName = JOptionPane.showInputDialog(null, "Enter Your Name:", "Player Name", JOptionPane.PLAIN_MESSAGE);
+        if(playerName == null || playerName.trim().isEmpty()) {
+            playerName = "Player 1"; // Default name if input is empty
+        }
+
         // Make the frame
-        JFrame frame = new JFrame("Player 1 - Choose Your Island");
+        JFrame frame = new JFrame(playerName + " - Choose Your Island");
         frame.setSize(800, 600);
         frame.setLayout(new BorderLayout());
 
@@ -319,12 +327,13 @@ public class GUI {
         contentPanel.setBorder(BorderFactory.createEmptyBorder(200, 0, 0, 20)); // Adjust padding to move buttons higher
 
         // Title label
-        JLabel titleLabel = new JLabel("Player 1 - Choose Your Island");
+        JLabel titleLabel = new JLabel(playerName + " - Choose Your Island");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28)); // Larger font for the title
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // Add the title panel to the content panel
         contentPanel.add(titleLabel);
-        contentPanel.add(Box.createVerticalStrut(1)); // Add spacing below the title
+        contentPanel.add(Box.createVerticalStrut(20)); // Add spacing below the title
 
         // Create button panel
         JPanel buttonPanel = new JPanel();
@@ -334,7 +343,7 @@ public class GUI {
 
         // Create button with previous style
         Font buttonFont = new Font("Arial", Font.BOLD, 18); // Previous font size
-        Dimension buttonSize = new Dimension(200, 60 ); // Previous button size
+        Dimension buttonSize = new Dimension(500, 60 ); // Previous button size
 
         // Faction buttons with previous size and spacing
         JButton isabelleButton = createFactionButton(
@@ -430,8 +439,14 @@ public class GUI {
             } while (oppFaction.equals(playerFaction));
             initializeGame();
         } else {
+            // Prompt for Player 2 name
+            opponentName = JOptionPane.showInputDialog(null, "Player 2, Enter Your Name:", "Player Name", JOptionPane.PLAIN_MESSAGE);
+            if (opponentName == null || opponentName.trim().isEmpty()) {
+                opponentName = "Player 2"; // Default name if input is empty
+            }
+
             // For human opponent, show faction selection for Player 2
-            JFrame frame = new JFrame("Player 2 - Choose Your Island");
+            JFrame frame = new JFrame(opponentName + " - Choose Your Island");
             frame.setSize(800, 600);
             frame.setLayout(new BorderLayout());
 
@@ -451,15 +466,16 @@ public class GUI {
             JPanel contentPanel = new JPanel();
             contentPanel.setOpaque(false);
             contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-            contentPanel.setBorder(BorderFactory.createEmptyBorder(100, 0, 0, 0)); // Adjust padding to move buttons lower
+            contentPanel.setBorder(BorderFactory.createEmptyBorder(200, 0, 0, 20)); // Adjust padding to move buttons lower
 
             // Title label
-            JLabel titleLabel = new JLabel("Player 2 - Choose Your Island");
+            JLabel titleLabel = new JLabel(opponentName + " - Choose Your Island");
             titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
             titleLabel.setForeground(Color.WHITE);
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            // Add the title label to the content panel
             contentPanel.add(titleLabel);
-            contentPanel.add(Box.createVerticalStrut(50)); // Add spacing below the title
+            contentPanel.add(Box.createVerticalStrut(20)); // Add spacing below the title
 
             // Create button panel
             JPanel buttonPanel = new JPanel();
@@ -469,7 +485,7 @@ public class GUI {
 
             // Create button with same style as Player 1
             Font buttonFont = new Font("Arial", Font.BOLD, 18);
-            Dimension buttonSize = new Dimension(180, 50);
+            Dimension buttonSize = new Dimension(500, 60);
 
             // Faction buttons
             JButton isabelleButton = createFactionButton(
@@ -506,33 +522,37 @@ public class GUI {
 
             // Add buttons to panel
             buttonPanel.add(isabelleButton);
-            buttonPanel.add(Box.createVerticalStrut(15));
+            buttonPanel.add(Box.createVerticalStrut(12));
             buttonPanel.add(tomButton);
-            buttonPanel.add(Box.createVerticalStrut(15));
+            buttonPanel.add(Box.createVerticalStrut(12));
             buttonPanel.add(neutralButton);
-            buttonPanel.add(Box.createVerticalStrut(15));
+            buttonPanel.add(Box.createVerticalStrut(12));
             buttonPanel.add(antiButton);
 
-            // Back button
+                // Back button
             JButton backButton = new JButton("Back");
             backButton.setFont(buttonFont);
             backButton.setPreferredSize(buttonSize);
             backButton.setMaximumSize(buttonSize);
             backButton.setAlignmentX(Component.TOP_ALIGNMENT);
-            backButton.setBackground(new Color(255, 165, 0));
+            backButton.setBackground(new Color(255,165,0));
             backButton.setForeground(Color.RED);
             backButton.setFocusPainted(false);
+            // Set position manually (top left corner)
+            backButton.setBounds(10,10,100,40);
             backButton.addActionListener(e -> {
                 frame.dispose();
                 showFactionSelection();
             });
 
+            // Add the Back button to the frame
+            imageLabel.add(backButton);
+
             // Add components to content panel
-            contentPanel.add(Box.createVerticalStrut(50)); // Add spacing to move buttons lower
             contentPanel.add(buttonPanel);
 
             // Add components to frame
-            imageLabel.add(backButton, BorderLayout.NORTH);
+            imageLabel.setLayout(new BorderLayout());
             imageLabel.add(contentPanel, BorderLayout.CENTER);
 
             frame.setVisible(true);
@@ -551,12 +571,12 @@ public class GUI {
         oppBoard = new Board(10,10);
 
         // Update player's name with their chosen island
-        currentPlayer = new Player("Player 1 (" + playerFaction + ")");
+        currentPlayer = new Player(playerName + " (" + playerFaction + ")");
         if(isAI) {
             opponent = new AIPlayer("Computer ("+ oppFaction +")", false);
             ((AIPlayer)opponent).placeShips(oppBoard, 3); // AI immediately place ship on the board
         }else {
-            opponent = new Player ("Player 2 ("+ oppFaction + ")");
+            opponent = new Player (opponentName + " ("+ oppFaction + ")");
         }
 
         setupPlacement();
