@@ -973,53 +973,6 @@ public class GUI {
         }
     }
 
-    // private static void prepareForBattlePhase() {
-    //     // // // Ensure Player 1 is current player when battle starts
-    //     // // if (!currentPlayer.getName().equals(playerName + " (" + playerFaction + ")")) {
-    //     // //     Player temp = currentPlayer;
-    //     // //     currentPlayer = opponent;
-    //     // //     opponent = temp;
-            
-    //     // //     Board tempBoard = playerBoard;
-    //     // //     playerBoard = oppBoard;
-    //     // //     oppBoard = tempBoard;
-    //     // // }
-    //     // // startBattlePhase();
-
-    //     // Only swap if it's a 2-player game and both players have placed ships
-    //     if (!isAI) {
-    //         // Swap player references
-    //         Player temp = currentPlayer;
-    //         currentPlayer = opponent;
-    //         opponent = temp;
-            
-    //         // // Swap boards
-    //         // Board tempBoard = playerBoard;
-    //         // playerBoard = oppBoard;
-    //         // oppBoard = tempBoard;
-    //     }
-        
-    //     // Reset to Player 1's turn
-    //     currentPlayer = new Player(playerName + " (" + playerFaction + ")");
-    //     opponent = isAI ? new AIPlayer("Computer ("+ oppFaction +")", false) 
-    //                 : new Player(opponentName + " ("+ oppFaction + ")");
-        
-    //     startBattlePhase();
-    // }
-
-    // // In prepareForBattlePhase() - replace with:
-    // private static void prepareForBattlePhase() {
-    //     // Reset to Player 1's turn
-    //     currentPlayer = new Player(playerName + " (" + playerFaction + ")");
-    //     if (isAI) {
-    //         opponent = new AIPlayer("Computer ("+ oppFaction +")", false);
-    //     } else {
-    //         opponent = new Player(opponentName + " ("+ oppFaction + ")");
-    //     }
-        
-    //     startBattlePhase();
-    // }
-
     private static void prepareForBattlePhase() {
         // Ensure Player 1 starts the battle phase
         if (!currentPlayer.getName().equals(playerName + " (" + playerFaction + ")")) {
@@ -1437,73 +1390,19 @@ public class GUI {
         gameFrame.dispose();
     }
     
-    // private static void switchTurns() {
-    //     // Hide both boards temporarily
-    //     gamePanel.removeAll();
-    //     gameFrame.revalidate();
-    //     gameFrame.repaint();
+    private static void switchTurns() {
+        // Hide both boards temporarily
+        gamePanel.removeAll();
+        gameFrame.revalidate();
+        gameFrame.repaint();
 
-    //     // Show transition screen
-    //     showTransitionScreen(() -> {
-    //         // Notify the next player if their board was hit
-    //         String hitMessage = lastAttackHit
-    //             ? "Your ship was hit during the last turn!"
-    //             : "No hits during the last turn.";
-    //         JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
-
-    //         // Swap current player and opponent
-    //         Player tempPlayer = currentPlayer;
-    //         currentPlayer = opponent;
-    //         opponent = tempPlayer;
-            
-    //         // Swap boards
-    //         Board tempBoard = playerBoard;
-    //         playerBoard = oppBoard;
-    //         oppBoard = tempBoard;
-            
-    //         // Swap button references
-    //         JButton[][] tempButtons = playerButtons;
-    //         playerButtons = oppButtons;
-    //         oppButtons = tempButtons;
-            
-    //         // Update UI
-    //         statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
-            
-    //         // Refresh the boards display
-    //         refreshBoards();
-
-    //         // // // For 2-player mode, just refresh the boards with the correct perspective
-    //         // // if (!isAI) {
-    //         // //     if (currentPlayer.getName().startsWith(playerName)) {
-    //         // //         // Switching to Player 2's turn
-    //         // //         currentPlayer = opponent;
-    //         // //         opponent = new Player(playerName + " (" + playerFaction + ")");
-    //         // //     } else {
-    //         // //         // Switching back to Player 1's turn
-    //         // //         currentPlayer = new Player(playerName + " (" + playerFaction + ")");
-    //         // //         opponent = new Player(opponentName + " ("+ oppFaction + ")");
-    //         // //     }
-    //         // // }
-            
-    //         // // Update UI
-    //         // statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
-            
-    //         // // Refresh the boards display
-    //         // refreshBoards();
-    //     });
-    // }
-
-    // In switchTurns() - replace with:
-private static void switchTurns() {
-    // Only swap if it's a 2-player game
-    if (!isAI) {
         // Show transition screen
         showTransitionScreen(() -> {
             // Notify the next player if their board was hit
             String hitMessage = lastAttackHit
                 ? "Your ship was hit during the last turn!"
                 : "No hits during the last turn.";
-            JOptionPane.showMessageDialog(gameFrame, hitMessage, "Turn Update", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
 
             // Swap current player and opponent
             Player tempPlayer = currentPlayer;
@@ -1515,16 +1414,31 @@ private static void switchTurns() {
             playerBoard = oppBoard;
             oppBoard = tempBoard;
             
+            // Swap button references
+            JButton[][] tempButtons = playerButtons;
+            playerButtons = oppButtons;
+            oppButtons = tempButtons;
+            
             // Update UI
             statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
+
+            // For 2-player mode, just refresh the boards with the correct perspective
+            if (!isAI) {
+                if (currentPlayer.getName().startsWith(playerName)) {
+                    // Switching to Player 2's turn
+                    currentPlayer = opponent;
+                    opponent = new Player(playerName + " (" + playerFaction + ")");
+                } else {
+                    // Switching back to Player 1's turn
+                    currentPlayer = new Player(playerName + " (" + playerFaction + ")");
+                    opponent = new Player(opponentName + " ("+ oppFaction + ")");
+                }
+            }
+            
+            // Refresh the boards display
             refreshBoards();
         });
-    } else {
-        // For AI, just refresh the board
-        refreshBoards();
-        aiTurn(); // AI takes its turn immediately
     }
-}
     
     private static void showTransitionScreen(Runnable onTransitionComplete) {
         // Create a transition panel
