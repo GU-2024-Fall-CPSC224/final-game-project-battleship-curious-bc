@@ -36,7 +36,7 @@ public class Board {
     public boolean attack(Coordinate coord) {
         if (!canPlaceShot(coord)) return false;
         int result = placeShot(coord);
-        return result == 3; // true if hit
+        return result == 3 || result == 4; // true if hit
     }
 
     public int getFleetSize() {
@@ -138,24 +138,28 @@ public class Board {
         int field = fieldStatic[x][y];
         
         if (field == 1 || field == 3){
-        throw new IllegalStateException("Field already been shot at/hit.");
+            throw new IllegalStateException("Field already been shot at/hit.");
         } else if (field == 0) {
             fieldStatic[x][y] = 1;
-            return field; // Missed shot
+            return 1; // Missed shot
+        } else if (field == 4) {  // just add this to check if the field is an island
+            fieldStatic[x][y] = 3; // Mark as Miss
+            return 4; // Missed shot
         } else {
             fieldStatic[x][y] = 3; // Mark as Shot Hit
             Iterator<Ship> iterator = fleet.iterator();
-        while (iterator.hasNext()) {
-            Ship ship = iterator.next();
-            if (ship.hasCoordinates(coord)) {
-                ship.shipHit(coord); // Register the hit on the ship
-                if (ship.noMoreShip()) {
-                    iterator.remove(); // Safely remove the ship from the fleet
+            while (iterator.hasNext()) {
+                Ship ship = iterator.next();
+                if (ship.hasCoordinates(coord)) {
+                    ship.shipHit(coord); // Register the hit on the ship
+                    if (ship.noMoreShip()) {
+                        iterator.remove(); // Safely remove the ship from the fleet
+                        }
                     }
                 }
+                // return fieldStatic [x][y];
+                return 3; // Hit
             }
-        }
-        return fieldStatic [x][y];
     }
 
     // Get board X dimension

@@ -1216,7 +1216,14 @@ public class GUI {
             disableAllAttackButtons();
 
             Coordinate target = new Coordinate(row, col);
+            int previousStatus = oppBoard.getFieldStatus(row, col);
             lastAttackHit = oppBoard.attack(target); // Track if the attack was a hit
+
+            // Check if the attack hit an island (status 4)
+            if (previousStatus == 4) {
+                showGameOver(currentPlayer.getName() + " wins by hitting the island! " + playerFaction + " prevails!");
+                return;
+            }
             
             // Update the button that was clicked
             JButton button = (JButton)e.getSource();
@@ -1274,6 +1281,7 @@ public class GUI {
 
         // AI chooses a target and attacks
         Coordinate target = ((AIPlayer)opponent).chooseAttack(playerBoard);
+        int previousStatus = playerBoard.getFieldStatus(target.getRow(), target.getCol());
         boolean isHit = playerBoard.attack(target);
         
         int row = target.getRow();
@@ -1282,6 +1290,12 @@ public class GUI {
         // // DEBUG
         // System.out.println("AI attacked row: " + row + ", col: " + col);
         // System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
+
+        // Check if the attack hit an island (status 4)
+        if (previousStatus == 4) {
+            showGameOver(opponent.getName() + " wins by hitting the island! " + oppFaction + " prevails!");
+            return;
+        }
 
         // Update player's board display
         if (playerButtons[row][col] != null) {
@@ -1363,10 +1377,11 @@ public class GUI {
      */
     private static void showGameOver(String message) {
         JPanel panel = new JPanel(new BorderLayout());
+        boolean isIslandWin = message.toLowerCase().contains("island");
         
         JLabel messageLabel = new JLabel("<html><div style='text-align: center;'>" +
-            "<h1>" + message + "</h1>" +
-            "<p>Final Score: " + currentPlayer.getScore() + "</p></div></html>");
+            "<h1>" + message + "</h1>" + 
+            (isIslandWin ? "" : "<p>Final Score: " + currentPlayer.getScore() + "</p></div></html>"));
         messageLabel.setFont(new Font("Arial", Font.BOLD, 16));
         messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
