@@ -36,7 +36,8 @@ public class GUI {
     private static JButton [][] playerButtons;
     private static JButton [][] oppButtons;
     private static int shipSize = 2;
-    private static int shipsPlaced = 0;
+    private static int shipsPlaced = 0; // Count of ships placed
+    private static int islandsPlaced = 0; // Count of islands placed
     private static boolean horizontalPlacement = true;
     private static JButton rotateButton;
     private static JButton confirmButton;
@@ -571,6 +572,10 @@ public class GUI {
         playerBoard = new Board(10,10);
         oppBoard = new Board(10,10);
 
+        // Initialize button arrays
+        playerButtons = new JButton[10][10];
+        oppButtons = new JButton[10][10];
+
         // Update player's name with their chosen island
         currentPlayer = new Player(playerName + " (" + playerFaction + ")");
         if(isAI) {
@@ -588,8 +593,18 @@ public class GUI {
     private static void setupPlacement() {
         gamePanel = new JPanel(new BorderLayout());
 
+        // Add background GIF first (this will be at the bottom)
+        JLabel backgroundLabel = new JLabel(new ImageIcon(GUI.class.getResource("/bg.gif")));
+        backgroundLabel.setLayout(new BorderLayout()); // Use layout for the background
+        gamePanel.add(backgroundLabel, BorderLayout.CENTER);
+
+        // Create a content panel that will hold everything else
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setOpaque(false); // Make it transparent
+
         // Create board panel
         JPanel boardPanel = new JPanel(new GridLayout(1,2,20,20));
+        boardPanel.setOpaque(false); // Make the board transparent to show the GIF background
         boardPanel.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
 
         // Player board set up
@@ -601,8 +616,13 @@ public class GUI {
         oppBoardPanel.setVisible(false);
         boardPanel.add(oppBoardPanel);
 
+        // Add board to content panel
+        contentPanel.add(boardPanel, BorderLayout.CENTER);
+
         // Control panel with buttons
         JPanel controlPanel = new JPanel();
+        // controlPanel.setBounds(50, 470, 700, 50); // Adjust size and position
+        controlPanel.setOpaque(false);
 
         // Dropdown for ship size selection
         sizeSelector = new JComboBox<>(new Integer[]{2,3,4,5}); // Size 2-5
@@ -653,13 +673,16 @@ public class GUI {
         controlPanel.add(rotateButton);
         controlPanel.add(confirmButton);
 
-        // Add components to main panel
-        gamePanel.add(boardPanel, BorderLayout.CENTER);
-        gamePanel.add(controlPanel, BorderLayout.NORTH);
-        gamePanel.add(statusLabel, BorderLayout.SOUTH);
+        // Add components to content panel
+        contentPanel.add(controlPanel, BorderLayout.NORTH);
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        contentPanel.add(statusLabel, BorderLayout.SOUTH);
 
-        // Add panel to frame
-        gameFrame.add(gamePanel);
+        // Add the content panel to the background label
+        backgroundLabel.add(contentPanel);
+        
+        // Set game panel to frame
+        gameFrame.setContentPane(gamePanel);
         gameFrame.revalidate();
         gameFrame.repaint();
     }
@@ -667,8 +690,8 @@ public class GUI {
     private static JPanel createBoardPanel(boolean isPlayerBoard) {
         JPanel boardPanel = new JPanel(new GridLayout(10,10,1,1));
         boardPanel.setBorder(BorderFactory.createTitledBorder(
-            isPlayerBoard ? "Your Ship (" + playerFaction +")" : 
-            (isAI ? "Computer ("+ oppFaction + ")" : oppFaction + "'s Waters")));
+            isPlayerBoard ? "Your Ship (" + currentPlayer.getName() +")" : 
+            (isAI ? "Computer ("+ oppFaction + ")" : currentPlayer.getName() + "'s Waters")));
 
         JButton[][] buttons = new JButton[10][10];
         for (int row = 0; row < 10; row++) {
@@ -858,6 +881,11 @@ public class GUI {
     private static void confirmPlacement() {
         if (isPlacingIsland) {
             // Confirm Island placement
+            if (islandsPlaced >= 1) {
+                statusLabel.setText("You can only place one island! Confirm or remove the existing one.");
+                return;
+            }
+
             if (selectedShipCoordinates.size() == 4) {
                 // Validate that the island can be placed
                 Island island = new Island(playerFaction + " Island", selectedShipCoordinates);
@@ -867,13 +895,27 @@ public class GUI {
                         playerButtons[coord.getRow()][coord.getCol()].setBackground(Color.YELLOW); // Mark as island
                         playerBoard.setFieldStatus(coord.getRow(), coord.getCol(), 4); // Set as confirmed island
                     }
-                    shipsPlaced++;
+                    islandsPlaced++; // Increment the island counter
                     selectedShipCoordinates.clear();
                     confirmButton.setEnabled(false);
                     statusLabel.setText("Island placed! Place your next ship or island.");
 
                     gamePanel.revalidate();
                     gamePanel.repaint();
+
+                    if(shipsPlaced >= 3 && islandsPlaced >=1) {
+                        if(!isAI) {
+                            if (currentPlayer.getName().equals(playerName +" (" + playerFaction + ")")) {
+                                switchToOpponentPlacement();
+                            } else {
+                                // Player 2 finished placement - start battle phase
+                                prepareForBattlePhase();
+                            }
+                        } else {
+                            // AI opponent - start battle immediately
+                            prepareForBattlePhase();
+                        }
+                    }
                 } else {
                     statusLabel.setText("Invalid island placement! Try again.");
                 }
@@ -882,6 +924,11 @@ public class GUI {
             }
         } else {
             // Confirm Ship placement
+            if(shipsPlaced >= 3) {
+                statusLabel.setText("You can only place three ships! Confirm or remove the existing one.");
+                return;
+            }
+
             if (selectedShipCoordinates.size() == shipSize) {
                 // Create a new ship object and validate placement
                 Ship ship = new Ship(playerFaction + " Ship " + (shipsPlaced + 1), selectedShipCoordinates);
@@ -901,23 +948,20 @@ public class GUI {
                         statusLabel.setText("Place your next " + shipSize + "-segment ship.");
                     } else {
                         // If all ships and islands are placed, switch phases
-                        if (!isAI) {
-                            if (currentPlayer.getName().equals("Player 1 (" + playerFaction + ")")) {
-                                switchToOpponentPlacement();
+                        if (islandsPlaced >= 1) {
+                            if (!isAI) {
+                                if (currentPlayer.getName().equals(playerName +" (" + playerFaction + ")")) {
+                                    switchToOpponentPlacement();
+                                } else {
+                                    // Player 2 finished placement - start battle phase
+                                    prepareForBattlePhase();
+                                }
                             } else {
-                                // Swap back to player 1 before starting battle
-                                Player temp = currentPlayer;
-                                currentPlayer = opponent;
-                                opponent = temp;
-    
-                                Board tempBoard = playerBoard;
-                                playerBoard = oppBoard;
-                                oppBoard = tempBoard;
-    
-                                startBattlePhase();
+                                // AI opponent - start battle immediately
+                                prepareForBattlePhase();
                             }
                         } else {
-                            startBattlePhase();
+                            statusLabel.setText("You need to place 1 island before starting the game.");
                         }
                     }
                 } else {
@@ -929,24 +973,109 @@ public class GUI {
         }
     }
 
+    // private static void prepareForBattlePhase() {
+    //     // // // Ensure Player 1 is current player when battle starts
+    //     // // if (!currentPlayer.getName().equals(playerName + " (" + playerFaction + ")")) {
+    //     // //     Player temp = currentPlayer;
+    //     // //     currentPlayer = opponent;
+    //     // //     opponent = temp;
+            
+    //     // //     Board tempBoard = playerBoard;
+    //     // //     playerBoard = oppBoard;
+    //     // //     oppBoard = tempBoard;
+    //     // // }
+    //     // // startBattlePhase();
+
+    //     // Only swap if it's a 2-player game and both players have placed ships
+    //     if (!isAI) {
+    //         // Swap player references
+    //         Player temp = currentPlayer;
+    //         currentPlayer = opponent;
+    //         opponent = temp;
+            
+    //         // // Swap boards
+    //         // Board tempBoard = playerBoard;
+    //         // playerBoard = oppBoard;
+    //         // oppBoard = tempBoard;
+    //     }
+        
+    //     // Reset to Player 1's turn
+    //     currentPlayer = new Player(playerName + " (" + playerFaction + ")");
+    //     opponent = isAI ? new AIPlayer("Computer ("+ oppFaction +")", false) 
+    //                 : new Player(opponentName + " ("+ oppFaction + ")");
+        
+    //     startBattlePhase();
+    // }
+
+    // // In prepareForBattlePhase() - replace with:
+    // private static void prepareForBattlePhase() {
+    //     // Reset to Player 1's turn
+    //     currentPlayer = new Player(playerName + " (" + playerFaction + ")");
+    //     if (isAI) {
+    //         opponent = new AIPlayer("Computer ("+ oppFaction +")", false);
+    //     } else {
+    //         opponent = new Player(opponentName + " ("+ oppFaction + ")");
+    //     }
+        
+    //     startBattlePhase();
+    // }
+
+    private static void prepareForBattlePhase() {
+        // Ensure Player 1 starts the battle phase
+        if (!currentPlayer.getName().equals(playerName + " (" + playerFaction + ")")) {
+            Player tempPlayer = currentPlayer;
+            currentPlayer = opponent;
+            opponent = tempPlayer;
+    
+            Board tempBoard = playerBoard;
+            playerBoard = oppBoard;
+            oppBoard = tempBoard;
+        }
+    
+        startBattlePhase();
+    }
+    
+
     private static void switchToOpponentPlacement() {
         // Save player 1's board and reset for player 2
         Board tempBoard = playerBoard;
         playerBoard = oppBoard;
         oppBoard = tempBoard;
         
-        // Update current player to player 2
+        // // Update current player to player 2
+        // currentPlayer = opponent;
+        // opponent = new Player(opponentName + " (" + playerFaction + ")");
+
+        // Update current player to opponent
+        Player tempPlayer = currentPlayer;
         currentPlayer = opponent;
-        opponent = new Player("Player 1 (" + playerFaction + ")");
+        opponent = tempPlayer;
 
         // Reset placement variables
         shipSize = 2;
         shipsPlaced = 0;
+        islandsPlaced = 0;
+        isPlacingIsland = false;
         selectedShipCoordinates.clear();
         
         // Update UI
         gamePanel.removeAll();
+        statusLabel.setText(opponentName + " Place your " + shipSize + "-segment ship");
+
+        // Create new panel with GIF background
+        gamePanel = new JPanel(new BorderLayout());
+
+        // Add background GIF first (this will be at the bottom)
+        JLabel backgroundLabel = new JLabel(new ImageIcon(GUI.class.getResource("/bg.gif")));
+        backgroundLabel.setLayout(new BorderLayout());
+        gamePanel.add(backgroundLabel, BorderLayout.CENTER);
+
+        // Create a content panel that will hold everything else
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setOpaque(false); // Make it transparent
+
         JPanel boardPanel = new JPanel(new GridLayout(1, 2, 20, 20));
+        boardPanel.setOpaque(false); // Make transparent
         boardPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Player board (now showing player 2's placement)
@@ -958,8 +1087,12 @@ public class GUI {
         oppBoardPanel.setVisible(false);
         boardPanel.add(oppBoardPanel);
 
+        // Add board to content panel
+        contentPanel.add(boardPanel, BorderLayout.CENTER);
+
         // Control panel with buttons
         JPanel controlPanel = new JPanel();
+        controlPanel.setOpaque(false);
 
         // Dropdown for ship size selection
         sizeSelector = new JComboBox<>(new Integer[]{2,3,4,5}); // Size 2-5
@@ -976,6 +1109,17 @@ public class GUI {
         controlPanel.add(new JLabel("Select Ship Size: "));
         controlPanel.add(sizeSelector);
 
+        JComboBox<String> placementTypeSelector = new JComboBox<>(new String[]{"Ship", "Island"}); 
+        placementTypeSelector.addActionListener(e -> {
+            isPlacingIsland = placementTypeSelector.getSelectedItem().equals("Island");
+            shipSize = isPlacingIsland ? 2 : (int) sizeSelector.getSelectedItem(); // Set ship size to 2 for island
+            clearHighlights();
+            statusLabel.setText(isPlacingIsland ? "Place your 2x2 Island" : "Place your " + shipSize + "-segment ship");
+        }); 
+
+        controlPanel.add(new JLabel("Place: "));
+        controlPanel.add(placementTypeSelector);
+
         rotateButton = new JButton("Rotate Ship");
         rotateButton.addActionListener(e -> {
             horizontalPlacement = !horizontalPlacement;
@@ -991,20 +1135,23 @@ public class GUI {
         confirmButton.setEnabled(false);
         confirmButton.addActionListener(e -> confirmPlacement());
         
-        statusLabel = new JLabel("Player 2: Place your " + shipSize + "-segment ship");
+        statusLabel = new JLabel(opponentName + ": Place your " + shipSize + "-segment ship");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 16));
         statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
         
         controlPanel.add(rotateButton);
         controlPanel.add(confirmButton);
 
-        // Add components to main panel
-        gamePanel.add(boardPanel, BorderLayout.CENTER);
-        gamePanel.add(controlPanel, BorderLayout.NORTH);
-        gamePanel.add(statusLabel, BorderLayout.SOUTH);
+        // Add components to content panel
+        contentPanel.add(controlPanel, BorderLayout.NORTH);
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        contentPanel.add(statusLabel, BorderLayout.SOUTH);
 
-        // Add panel to frame
-        gameFrame.add(gamePanel);
+        // Add the content panel to the background label
+        backgroundLabel.add(contentPanel);
+        
+        // Set game panel to frame
+        gameFrame.setContentPane(gamePanel);
         gameFrame.revalidate();
         gameFrame.repaint();
     }
@@ -1126,6 +1273,12 @@ public class GUI {
             // Notify the player of the attack result
             String message = lastAttackHit ? "You hit an enemy ship!" : "You missed!";
             JOptionPane.showMessageDialog(gameFrame, message, "Attack Result",JOptionPane.INFORMATION_MESSAGE);
+
+            // Then check game over
+            if (oppBoard.isGameOver()) {
+                showGameOver(currentPlayer.getName() + " wins! " + playerFaction + " prevails!");
+                return;
+            }
             
             if (lastAttackHit) {
                 currentPlayer.setScore(currentPlayer.getScore() + 1);
@@ -1173,14 +1326,20 @@ public class GUI {
         int row = target.getRow();
         int col = target.getCol();
 
-        // DEBUG
-        System.out.println("AI attacked row: " + row + ", col: " + col);
-        System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
+        // // DEBUG
+        // System.out.println("AI attacked row: " + row + ", col: " + col);
+        // System.out.println("Result: " + (isHit ? "Hit" : "Miss"));
 
         // Update player's board display
         if (playerButtons[row][col] != null) {
             playerButtons[row][col].setBackground(isHit ? INVALID_COLOR : Color.CYAN);
             playerButtons[row][col].setEnabled(false); // Disable the button after the move
+        }
+
+        // Then check game over
+        if (playerBoard.isGameOver()) {
+            showGameOver(opponent.getName() + " wins! " + oppFaction + " prevails!");
+            return;
         }
         
         // Force UI to refresh
@@ -1278,19 +1437,73 @@ public class GUI {
         gameFrame.dispose();
     }
     
-    private static void switchTurns() {
-        // Hide both boards temporarily
-        gamePanel.removeAll();
-        gameFrame.revalidate();
-        gameFrame.repaint();
+    // private static void switchTurns() {
+    //     // Hide both boards temporarily
+    //     gamePanel.removeAll();
+    //     gameFrame.revalidate();
+    //     gameFrame.repaint();
 
+    //     // Show transition screen
+    //     showTransitionScreen(() -> {
+    //         // Notify the next player if their board was hit
+    //         String hitMessage = lastAttackHit
+    //             ? "Your ship was hit during the last turn!"
+    //             : "No hits during the last turn.";
+    //         JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
+
+    //         // Swap current player and opponent
+    //         Player tempPlayer = currentPlayer;
+    //         currentPlayer = opponent;
+    //         opponent = tempPlayer;
+            
+    //         // Swap boards
+    //         Board tempBoard = playerBoard;
+    //         playerBoard = oppBoard;
+    //         oppBoard = tempBoard;
+            
+    //         // Swap button references
+    //         JButton[][] tempButtons = playerButtons;
+    //         playerButtons = oppButtons;
+    //         oppButtons = tempButtons;
+            
+    //         // Update UI
+    //         statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
+            
+    //         // Refresh the boards display
+    //         refreshBoards();
+
+    //         // // // For 2-player mode, just refresh the boards with the correct perspective
+    //         // // if (!isAI) {
+    //         // //     if (currentPlayer.getName().startsWith(playerName)) {
+    //         // //         // Switching to Player 2's turn
+    //         // //         currentPlayer = opponent;
+    //         // //         opponent = new Player(playerName + " (" + playerFaction + ")");
+    //         // //     } else {
+    //         // //         // Switching back to Player 1's turn
+    //         // //         currentPlayer = new Player(playerName + " (" + playerFaction + ")");
+    //         // //         opponent = new Player(opponentName + " ("+ oppFaction + ")");
+    //         // //     }
+    //         // // }
+            
+    //         // // Update UI
+    //         // statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
+            
+    //         // // Refresh the boards display
+    //         // refreshBoards();
+    //     });
+    // }
+
+    // In switchTurns() - replace with:
+private static void switchTurns() {
+    // Only swap if it's a 2-player game
+    if (!isAI) {
         // Show transition screen
         showTransitionScreen(() -> {
             // Notify the next player if their board was hit
             String hitMessage = lastAttackHit
                 ? "Your ship was hit during the last turn!"
                 : "No hits during the last turn.";
-            JOptionPane.showMessageDialog(gameFrame, hitMessage,"Turn Update", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(gameFrame, hitMessage, "Turn Update", JOptionPane.INFORMATION_MESSAGE);
 
             // Swap current player and opponent
             Player tempPlayer = currentPlayer;
@@ -1302,28 +1515,16 @@ public class GUI {
             playerBoard = oppBoard;
             oppBoard = tempBoard;
             
-            // Swap button references
-            JButton[][] tempButtons = playerButtons;
-            playerButtons = oppButtons;
-            oppButtons = tempButtons;
-            
             // Update UI
             statusLabel.setText(currentPlayer.getName() + "'s turn to attack!");
-            
-            // Refresh the boards display
             refreshBoards();
         });
-        
-        
-        // // Show message dialog to pass control
-        // if (!isAI) {
-        //     // Show message dialog to pass control only in 2-player mode
-        //     JOptionPane.showMessageDialog(gameFrame, 
-        //         "Pass the device to " + currentPlayer.getName(), 
-        //         "Switch Turns", 
-        //         JOptionPane.INFORMATION_MESSAGE);
-        // }
+    } else {
+        // For AI, just refresh the board
+        refreshBoards();
+        aiTurn(); // AI takes its turn immediately
     }
+}
     
     private static void showTransitionScreen(Runnable onTransitionComplete) {
         // Create a transition panel
@@ -1357,13 +1558,21 @@ public class GUI {
 
     // Add this helper method
     private static void refreshBoards() {
+        gamePanel.removeAll();
+
         // Refresh player board (showing current player's own ships)
         JPanel boardsPanel = new JPanel(new GridLayout(1, 2, 20, 20));
         boardsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Player board (show ships)
         JPanel playerBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
-        playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + currentPlayer.getName() + ")"));
+        // playerBoardPanel.setBorder(BorderFactory.createTitledBorder("Your Fleet (" + currentPlayer.getName() + ")"));
+
+        String playerTitle = isAI ? "Your Fleet (" + playerFaction + ")" 
+                             : currentPlayer.getName() + "'s Fleet";
+        playerBoardPanel.setBorder(BorderFactory.createTitledBorder(playerTitle));
+
+        Board currentPlayerBoard = currentPlayer.getName().startsWith(playerName) ? playerBoard : oppBoard;
 
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
@@ -1374,7 +1583,7 @@ public class GUI {
                 label.setBackground(WATER_COLOR); // Default to water color
                 
                 // Check the status of the field
-                int status = playerBoard.getFieldStatus(row, col);
+                int status = currentPlayerBoard.getFieldStatus(row, col);
                 if(status == 0) {
                     label.setBackground(WATER_COLOR); // Water
                 } else if (status == 1) {
@@ -1383,15 +1592,21 @@ public class GUI {
                     label.setBackground(SHIP_COLOR); // Ship
                 } else if (status == 3) {
                     label.setBackground(INVALID_COLOR); // Hit
+                } else if (status == 4) {
+                    label.setBackground(Color.YELLOW); // Island
                 }
                 playerBoardPanel.add(label);
             }
         }
         boardsPanel.add(playerBoardPanel);
+
         // Opponent board (clickable for attacks)
         JPanel enemyBoardPanel = new JPanel(new GridLayout(10, 10, 1, 1));
-        enemyBoardPanel.setBorder(BorderFactory.createTitledBorder("Enemy Waters (" + opponent.getName() + ")"));
+        String enemyTitle = isAI ? "Computer's Waters" : opponent.getName() + "'s Waters";
+        enemyBoardPanel.setBorder(BorderFactory.createTitledBorder(enemyTitle));
         
+        Board enemyBoard = currentPlayer.getName().startsWith(playerName) ? oppBoard : playerBoard;
+
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 JButton button = new JButton();
@@ -1400,7 +1615,7 @@ public class GUI {
                 button.setOpaque(true);
                 button.setBorder(BorderFactory.createLineBorder(Color.WHITE));
                 
-                int status = oppBoard.getFieldStatus(row, col);
+                int status = enemyBoard.getFieldStatus(row, col);
                 if (status == 1) {
                     button.setBackground(Color.CYAN); // Miss
                     button.setEnabled(false);
@@ -1416,7 +1631,9 @@ public class GUI {
             }
         }
         boardsPanel.add(enemyBoardPanel);
+
         gamePanel.add(boardsPanel, BorderLayout.CENTER);
+        gamePanel.add(statusLabel, BorderLayout.SOUTH);
         gameFrame.revalidate();
         gameFrame.repaint();
     }
