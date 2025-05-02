@@ -24,6 +24,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
+import java.awt.Graphics;
 
 public class GUI {
     private static boolean isAI = false; //Flag for AI component
@@ -62,7 +63,7 @@ public class GUI {
         // Create the JFrame
         JFrame frame = new JFrame("Battleship Game");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600); // Set the desired frame size
+        frame.setSize(1200, 1000); // Set the desired frame size
         frame.setLayout(null); // Use absolute positioning for layering
 
         // Load the PNG image
@@ -172,9 +173,10 @@ public class GUI {
             // Create a JLabel with custom font for the instructions
             JLabel instructionsLabel = new JLabel(
                 "<html>Instructions:<br>" +
-                "1. Each player places ships on their board.<br>" +
+                "1. Each player places 3 ships and 1 island on their board.<br>" +
                 "2. Players take turns firing at enemy coordinates.<br>" +
-                "3. The first to sink all enemy ships wins.<br>" +
+                "3. The first to hit the island wins <br>" +
+                "   Or the first to sink all enemy ships wins.<br>" +
                 "- Ship sizes range from 2-5.<br>" +
                 "- Set each ship's orientation as horizontal or vertical.<br>" +
                 "- Use coordinates like A0, B4 to place and attack.</html>"
@@ -210,7 +212,7 @@ public class GUI {
     public static void disPlayerSelection() {
         // Make the frame
         JFrame frame = new JFrame("Select Players");
-        frame.setSize(800,600);
+        frame.setSize(1200,1000);
         frame.setLayout(null);
 
         // Upload PNG image
@@ -307,11 +309,11 @@ public class GUI {
 
         // Make the frame
         JFrame frame = new JFrame(playerName + " - Choose Your Faction");
-        frame.setSize(800, 600);
+        frame.setSize(1200, 1000);
         frame.setLayout(new BorderLayout());
 
         // Upload PNG image
-        ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/1.PNG"));
+        ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/2.PNG"));
         Image scaledImage = originalIcon.getImage().getScaledInstance(
             frame.getWidth(), frame.getHeight(), Image.SCALE_SMOOTH
         );
@@ -331,7 +333,7 @@ public class GUI {
         // Title label
         JLabel titleLabel = new JLabel(playerName + " - Choose Your Faction");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28)); // Larger font for the title
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setForeground(new Color(0, 105, 148));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         // Add the title panel to the content panel
         contentPanel.add(titleLabel);
@@ -449,11 +451,11 @@ public class GUI {
 
             // For human opponent, show faction selection for Player 2
             JFrame frame = new JFrame(opponentName + " - Choose Your Faction");
-            frame.setSize(800, 600);
+            frame.setSize(1200, 1000);
             frame.setLayout(new BorderLayout());
 
             // Upload PNG image
-            ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/1.PNG"));
+            ImageIcon originalIcon = new ImageIcon(GUI.class.getResource("/2.PNG"));
             Image scaledImage = originalIcon.getImage().getScaledInstance(
                 frame.getWidth(), frame.getHeight(), Image.SCALE_SMOOTH
             );
@@ -473,7 +475,7 @@ public class GUI {
             // Title label
             JLabel titleLabel = new JLabel(opponentName + " - Choose Your Faction");
             titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
-            titleLabel.setForeground(Color.WHITE);
+            titleLabel.setForeground(new Color(0, 105, 148));
             titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
             // Add the title label to the content panel
             contentPanel.add(titleLabel);
@@ -565,7 +567,7 @@ public class GUI {
         gameFrame = new JFrame("Animal Crossing: Last island standing - " + 
                                   playerFaction + " vs " + (isAI ? "Computer (" + oppFaction + ")" : oppFaction));
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        gameFrame.setSize(800,600);
+        gameFrame.setSize(1200,1000);
         gameFrame.setLayout(new BorderLayout());
 
         // Initialize board
@@ -621,7 +623,6 @@ public class GUI {
 
         // Control panel with buttons
         JPanel controlPanel = new JPanel();
-        // controlPanel.setBounds(50, 470, 700, 50); // Adjust size and position
         controlPanel.setOpaque(false);
 
         // Dropdown for ship size selection
@@ -994,10 +995,6 @@ public class GUI {
         Board tempBoard = playerBoard;
         playerBoard = oppBoard;
         oppBoard = tempBoard;
-        
-        // // Update current player to player 2
-        // currentPlayer = opponent;
-        // opponent = new Player(opponentName + " (" + playerFaction + ")");
 
         // Update current player to opponent
         Player tempPlayer = currentPlayer;
